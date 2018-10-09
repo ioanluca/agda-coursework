@@ -47,13 +47,13 @@ num (suc n) = <> ,- num n
 -- thinnings with the following types.
 
 pick0from4 : List (num 0 <: num 4)
-pick0from4 = {!!}
+pick0from4 = o' (o' (o' (o' oz))) ,- []
 
 pick1from4 : List (num 1 <: num 4)
-pick1from4 = {!!}
+pick1from4 = o' (o' (os (o' oz))) ,- o' (os (o' (o' oz))) ,- os (o' (o' (o' oz))) ,- o' (o' (o' (os oz))) ,- []
 
 pick2from4 : List (num 2 <: num 4)
-pick2from4 = {!!}
+pick2from4 = o' (o' (os (os oz))) ,- o' (os (o' (os oz))) ,- o' (os (os (o' oz))) ,- os (o' (o' (os oz))) ,- os (o' (os (o' oz))) ,- os (os (o' (o' oz))) ,- []
 
 pick3from4 : List (num 3 <: num 4)
 pick3from4 = {!!}
