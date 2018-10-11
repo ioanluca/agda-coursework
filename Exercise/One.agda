@@ -56,15 +56,14 @@ pick2from4 : List (num 2 <: num 4)
 pick2from4 = o' (o' (os (os oz))) ,- o' (os (o' (os oz))) ,- o' (os (os (o' oz))) ,- os (o' (o' (os oz))) ,- os (o' (os (o' oz))) ,- os (os (o' (o' oz))) ,- []
 
 pick3from4 : List (num 3 <: num 4)
-pick3from4 = {!!}
+pick3from4 = o' (os (os (os oz))) ,- os (o' (os (os oz))) ,- os (os (o' (os oz))) ,- os (os (o' (os oz))) ,- []
           
 pick4from4 : List (num 4 <: num 4)
-pick4from4 = {!!}
-
+pick4from4 = os (os (os (os oz))) ,- []
 -- But with more interesting elements, we have fewer options, sometimes.
 
 thinOdds : List (1 ,- 3 ,- 5 ,- [] <: 0 ,- 1 ,- 2 ,- 3 ,- 4 ,- 5 ,- 6 ,- [])
-thinOdds = {!!}
+thinOdds = o' (os (o' (os (o' (os (o' oz)))))) ,- []
 
 
 ------------------------------------------------------------------------------
@@ -74,12 +73,16 @@ thinOdds = {!!}
 -- Construct the identity thinning from any list to itself.
 
 oi : forall {X}{xs : List X} -> xs <: xs
-oi = {!!}
+oi {xs = []} = oz
+oi {xs = x ,- xs} = os oi
 
 -- Give composition for thinnings. Minimize the number of cases.
 
 _-<-_ : forall {X}{xs ys zs : List X} -> xs <: ys -> ys <: zs -> xs <: zs
-th -<- ph = {!!}
+th -<- o' ph = o' (th -<- ph)
+o' th -<- os ph = o' (th -<- ph)
+os th -<- os ph = os (th -<- ph)
+oz -<- oz = oz
 
 infixl 40 _-<-_
 
@@ -105,7 +108,8 @@ assoc-<- th0 th1 th2 = {!!}
 -- Show that the empty list embeds into all lists in a unique way.
 
 oe : forall {X}{xs : List X} -> [] <: xs
-oe = {!!}
+oe {xs = []} = oz
+oe {xs = x ,- xs} = o' oe
 
 oe-unique : forall {X}{xs : List X}(th : [] <: xs) -> th == oe
 oe-unique th = {!!}
