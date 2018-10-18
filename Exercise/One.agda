@@ -90,10 +90,14 @@ infixl 40 _-<-_
 -- depend on your definition of _-<-_).
 
 oi-<- : forall {X}{xs ys : List X}(ph : xs <: ys) -> oi -<- ph == ph
-oi-<- ph = {!!}
+oi-<- (o' ph) = o' $= oi-<- ph
+oi-<- (os ph) = os $= oi-<- ph
+oi-<- oz = refl
 
 _-<-oi : forall {X}{xs ys : List X}(th : xs <: ys) -> th -<- oi == th
-th -<-oi = {!!}
+o' th -<-oi = o' $= (th -<-oi)
+os th -<-oi = os $= (th -<-oi)
+oz -<-oi = refl
 
 assoc-<- : forall {X}{ws xs ys zs : List X}
              (th0 : ws <: xs)(th1 : xs <: ys)(th2 : ys <: zs) ->
@@ -112,7 +116,8 @@ oe {xs = []} = oz
 oe {xs = x ,- xs} = o' oe
 
 oe-unique : forall {X}{xs : List X}(th : [] <: xs) -> th == oe
-oe-unique th = {!!}
+oe-unique {xs = []} oz = refl
+oe-unique {xs = x ,- xs} (o' th) = o' $= oe-unique {xs = xs} th
 
 
 ------------------------------------------------------------------------------
@@ -145,14 +150,17 @@ oi-unique th = {!!}
 
 select : forall {X}{xs ys : List X}{P : X -> Set} ->
          xs <: ys -> All P ys -> All P xs
-select th pys = {!!}
+select (o' th) (py ,- pys) = select th pys 
+select (os th) (py ,- pys) = py ,- select th pys
+select oz [] = []
 
 -- Now prove the following laws relating to selecting by the
 -- identity and composition.
 
 select-oi : forall {X}{xs : List X}{P : X -> Set} -> (pxs : All P xs) ->
             select oi pxs == pxs
-select-oi pxs = {!!}
+select-oi [] = refl
+select-oi (px ,- pxs) = px ,-_ $= select-oi pxs
 
 select-<- : forall {X}{xs ys zs : List X}{P : X -> Set} ->
             (th : xs <: ys)(ph : ys <: zs) -> (pzs : All P zs) ->
