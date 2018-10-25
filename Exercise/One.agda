@@ -131,7 +131,15 @@ antisym : forall {X}{xs ys : List X}
              (th : xs <: ys)(ph : ys <: xs) ->
              Sg (xs == ys) \
              { refl -> th == oi * ph == oi }
-antisym th ph = {!!}
+antisym (o' th) ph with antisym th (o' oi -<- ph)
+antisym (o' .(os oi)) (o' ph) | refl , refl , ()
+antisym (o' .(os oi)) (os ph) | refl , refl , ()
+antisym (os th) (o' ph) with antisym th (o' oi -<- ph)
+antisym (os .(os oi)) (o' (o' ph)) | refl , refl , ()
+antisym (os .(os oi)) (o' (os ph)) | refl , refl , () 
+antisym (os th) (os ph) with antisym th ph
+antisym (os .oi) (os .oi) | refl , refl , refl = refl , refl , refl 
+antisym oz oz = refl , refl , refl
 
 -- Deduce that oi is unique.
 
