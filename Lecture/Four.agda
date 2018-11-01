@@ -1,5 +1,5 @@
 {-# OPTIONS --type-in-type --no-unicode #-}
-
+{- OPTIONS --irrelevant-projections -}
 module Lecture.Four where
 
 open import Lib.Basics
@@ -159,7 +159,7 @@ listComp : forall {A B C} {f : A -> B} {g : B -> C} (as : List A) ->
            list (\ r -> g (f r)) as == list g (list f as)
 listComp [] = refl
 listComp (a ,- as) = (_ ,-_) $= listComp as
-           
+
 LIST : Functor SET SET List
 LIST = record { map = list ; mapidArr = ext listId ; map-arr- = \ f g -> ext listComp }
 
@@ -205,7 +205,7 @@ module _
     where
     module F = Functor F
     module G = Functor G
-  Functor.map-arr- (F -Func- G) f g = 
+  Functor.map-arr- (F -Func- G) f g =
       G.map (F.map (f R.-arr- g))
         =[ G.map $= F.map-arr- f g >=
       G.map (F.map f S.-arr- F.map g)
@@ -288,8 +288,6 @@ record Monad {Obj : Set}{Arr : Obj -> Obj -> Set}{C : Category Arr}
     joinNT   : NaturalTransformation (M -Func- M) M
   module R = NaturalTransformation returnNT
   module J = NaturalTransformation joinNT
-  KlArr : Obj -> Obj -> Set
-  KlArr S T = Arr S (ObjM T)
   field
     returnJoin : {X : Obj} ->
       (R.transform (ObjM X) -arr- J.transform X) == idArr
@@ -299,15 +297,64 @@ record Monad {Obj : Set}{Arr : Obj -> Obj -> Set}{C : Category Arr}
       (J.transform (ObjM X) -arr- J.transform X)
       ==
       (map (J.transform X) -arr- J.transform X)
+  KlArr : Obj -> Obj -> Set
+  KlArr S T = Arr S (ObjM T)
   Kleisli : Category KlArr
-  Kleisli = {!!}
+  Kleisli = record
+    { idArr = R.transform _
+    ; _-arr-_ = \ h k -> h -arr- map k -arr- J.transform _
+    ; idArr-arr- = \ {S} {T} f ->
+      (R.transform S -arr- (map f -arr- J.transform T))
+        =< assoc-arr- _ _ _ ]=
+      ((R.transform S -arr- map f) -arr- J.transform T)
+        =[ (_-arr- J.transform T) $= R.natural f  >=        
+      ((f -arr- R.transform (ObjM T)) -arr- J.transform T)
+         =[ assoc-arr- _ _ _ >=
+      (f -arr- R.transform (ObjM T) -arr- J.transform T)
+        =[ (f -arr-_) $= returnJoin >=
+      (f -arr- idArr)
+        =[ f -arr-idArr >=                
+      f
+        [QED]
+    ; _-arr-idArr = \ {S} {T} f ->
+      (f -arr- (map (R.transform T) -arr- J.transform T))
+        =[ (f -arr-_) $= mapReturnJoin >=
+      (f -arr- idArr)
+        =[ f -arr-idArr >=
+      f
+        [QED]
+    ; assoc-arr- = \ {R}{S}{T}{U} f g h ->
+      (f -arr- map g -arr- J.transform T) -arr- map h -arr- J.transform U
+         =[ {!!} >=  --boring assoc
+      f -arr- map g -arr- (J.transform T -arr- map h) -arr- J.transform U
+         =[ (\ z -> f -arr- map g -arr- z -arr- J.transform U) $= J.natural h >=         
+      f -arr- map g -arr- (map (map h) -arr- J.transform (ObjM U)) -arr- J.transform U
+         =[ {!!} >= -- boring assoc        
+      f -arr- map g -arr- map (map h) -arr- J.transform (ObjM U) -arr- J.transform U
+         =[ {!!} >= -- boring assoc
+      f -arr- map g -arr- map (map h) -arr- (J.transform (ObjM U) -arr- J.transform U)
+         =[ (\ z -> f -arr- map g -arr- map (map h) -arr- z) $= joinJoin >=
+      f -arr- map g -arr- map (map h) -arr- (map (J.transform U) -arr- J.transform U)
+         =[ {!!} >= -- boring functoriality + assoc
+      f -arr- map (g -arr- map h -arr- J.transform U) -arr- J.transform U
+         [QED]
+    }
 
 
 _*Cat_ : {ObjS : Set}{ArrS : ObjS -> ObjS -> Set}(CatS : Category ArrS)
          {ObjT : Set}{ArrT : ObjT -> ObjT -> Set}(CatT : Category ArrT) ->
          Category {ObjS * ObjT} \ {(SS , TS) (ST , TT) ->
            ArrS SS ST * ArrT TS TT}
-CatS *Cat CatT = {!!}
+CatS *Cat CatT =
+  record
+    { idArr = (S.idArr , T.idArr)
+    ; _-arr-_ = \ { (fS , fT) (gS , gT) -> (fS S.-arr- gS) , (fT T.-arr- gT) }
+    ; idArr-arr- = \ { {AS , AT} {BS , BT} (fS , fT) ->
+                          reff _,_ =$= (Category.idArr-arr- CatS fS) =$= (Category.idArr-arr- CatT fT) }
+    ; _-arr-idArr = \ { {AS , AT} {BS , BT} (fS , fT) ->
+                          reff _,_ =$= (Category._-arr-idArr CatS fS) =$= (Category._-arr-idArr CatT fT) }
+    ; assoc-arr- = \ { (fS , fT) (gS , gT) (hS , hT) -> reff _,_ =$= Category.assoc-arr- CatS fS gS hS =$= Category.assoc-arr- CatT fT gT hT }
+    }
   where
     module S = Category CatS
     module T = Category CatT
@@ -325,11 +372,35 @@ module _
       module F' = Functor F'
       open Functor
 
-    _*Fun_ : 
-         Functor (CatS *Cat CatS') (CatT *Cat CatT') {!!} -- \ { (S , S') -> (ObjF S , ObjF' S') }
-    _*Fun_ = {!!}
-    
+    _*Fun_ :
+         Functor (CatS *Cat CatS') (CatT *Cat CatT')
+           \ { (S , S') -> (ObjF S , ObjF' S') }
+    map _*Fun_ (f , f') = (F.map f) , (F'.map f')
+    mapidArr _*Fun_ = reff _,_ =$= F.mapidArr =$= F'.mapidArr
+    map-arr- _*Fun_ (f , f') (g , g') =
+      reff _,_ =$= F.map-arr- f g =$= F'.map-arr- f' g'
 
+module _ {ObjS : Set}{ArrS : ObjS -> ObjS -> Set}{CatS : Category ArrS} where
+  open Category CatS
+  open Functor
+
+
+  Delta : Functor CatS (CatS *Cat CatS) \ X -> X , X
+  Delta = record
+    { map = \ f -> f , f
+    ; mapidArr = refl
+    ; map-arr- = \ f g -> refl
+    }
+
+module _ where
+  open Category SET
+  open Functor
+
+  SETPair : Functor (SET *Cat SET) SET \ { (S , T) -> S * T }
+  map SETPair (f , f') (a , a') = (f a) , (f' a')
+  mapidArr SETPair = refl
+  map-arr- SETPair (f , f') (g , g') = refl
+  
 module _ where
   open NaturalTransformation
 
@@ -337,13 +408,35 @@ module _ where
   [] +L ys = ys
   (x ,- xs) +L ys = x ,- (xs +L ys)
 
+  appendNatural : {X Y : Set}(f : X -> Y)(xs ys : List X) ->
+                   list f (xs +L ys) == (list f xs +L list f ys)
+  appendNatural f [] ys = refl
+  appendNatural f (x ,- xs) ys = (f x ,-_) $= appendNatural f xs ys
+
+  appendNT : NaturalTransformation (Delta -Func- (LIST *Fun LIST) -Func- SETPair)
+                                   LIST
+  appendNT = record { transform = \ X -> \ { (xs , ys) -> xs +L ys }
+                    ; natural = \ f -> ext \ { (xs , ys) -> appendNatural f xs ys }
+                    }
+
   concat : {X : Set} -> List (List X) -> List X
   concat [] = []
   concat (xs ,- xss) = xs +L concat xss
-
+  
+  concatNatural : forall {X Y} (f : X -> Y) (xss : List (List X)) ->
+                  list f (concat xss) == concat (list (list f) xss)
+  concatNatural f [] = refl
+  concatNatural f (xs ,- xss) =
+    list f (xs +L concat xss)
+      =[ appendNatural f xs (concat xss) >=
+    (list f xs +L list f (concat xss))
+      =[ (list f xs +L_) $= concatNatural f xss >=
+    (list f xs +L concat (list (list f) xss))
+      [QED]
+  
   concatNT : NaturalTransformation (LIST -Func- LIST) LIST
   transform concatNT X = concat
-  natural concatNT = {!!}
+  natural concatNT f = ext (concatNatural f)
 
 LISTMonad : Monad LIST
 LISTMonad = record
@@ -380,15 +473,15 @@ LISTMonad = record
         G.map S.idArr
           =[ G.mapidArr >=
         T.idArr
-          [QED] 
+          [QED]
     ; map-arr- = \ h k ->
         G.map (F.map (h R.-arr- k))
           =[ G.map $= F.map-arr- h k >=
         G.map (F.map h S.-arr- F.map k)
-          =[ G.map-arr- (F.map h) (F.map k) >= 
+          =[ G.map-arr- (F.map h) (F.map k) >=
         (G.map (F.map h) T.-arr- G.map (F.map k))
           [QED]
-    } 
+    }
 
 
 CATEGORY = record
@@ -411,7 +504,7 @@ CatS *Cat CatT = record
     module S = Category CatS
     module T = Category CatT
 
-    _*Fun_ : 
+    _*Fun_ :
          Functor (CatS *Cat CatS') (CatT *Cat CatT') \ { (S , S') -> (ObjF S , ObjF' S') }
     map _*Fun_ (f , f') = F.map f , F'.map f'
     mapidArr _*Fun_ = reff _,_ =$= F.mapidArr =$= F'.mapidArr
@@ -419,7 +512,6 @@ CatS *Cat CatT = record
 
 
 
-    
 module _ {ObjS : Set}{ArrS : ObjS -> ObjS -> Set}{CatS : Category ArrS} where
   open Category CatS
   open Functor
@@ -432,12 +524,12 @@ module _ {ObjS : Set}{ArrS : ObjS -> ObjS -> Set}{CatS : Category ArrS} where
 module _ where
   open Category SET
   open Functor
-  
+
   SETPair : Functor (SET *Cat SET) SET \ { (S , T) -> S * T }
   map SETPair (f , g) (a , b) = f a , g b
   mapidArr SETPair = refl
   map-arr- SETPair f g = refl
-  
+
 
 
 _+L_ : {X : Set} -> List X -> List X -> List X
