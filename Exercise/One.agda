@@ -102,7 +102,11 @@ oz -<-oi = refl
 assoc-<- : forall {X}{ws xs ys zs : List X}
              (th0 : ws <: xs)(th1 : xs <: ys)(th2 : ys <: zs) ->
              (th0 -<- th1) -<- th2 == th0 -<- (th1 -<- th2)
-assoc-<- th0 th1 th2 = {!!}
+assoc-<- th0 th1 (o' th2) = o' $= assoc-<- th0 th1 th2
+assoc-<- th0 (o' th1) (os th2) = o' $= assoc-<- th0 th1 th2
+assoc-<- (o' th0) (os th1) (os th2) = o' $= assoc-<- th0 th1 th2
+assoc-<- (os th0) (os th1) (os th2) = os $= assoc-<- th0 th1 th2
+assoc-<- oz oz oz = refl
 
 
 ------------------------------------------------------------------------------
