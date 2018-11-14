@@ -148,7 +148,9 @@ antisym oz oz = refl , refl , refl
 -- Deduce that oi is unique.
 
 oi-unique : forall {X}{xs : List X}(th : xs <: xs) -> th == oi
-oi-unique th = {!!}
+oi-unique {xs = []} oz = refl
+oi-unique {xs = x ,- xs} (o' th) = {!!} 
+oi-unique {xs = x ,- xs} (os th) = os $= oi-unique {xs = xs} th
 
 
 ------------------------------------------------------------------------------
