@@ -115,7 +115,7 @@ assoc-<- oz oz oz = refl
 ------------------------------------------------------------------------------
 
 -- Show that the empty list embeds into all lists in a unique way.
-
+ 
 oe : forall {X}{xs : List X} -> [] <: xs
 oe {xs = []} = oz
 oe {xs = x ,- xs} = o' oe
@@ -136,22 +136,22 @@ antisym : forall {X}{xs ys : List X}
              (th : xs <: ys)(ph : ys <: xs) ->
              Sg (xs == ys) \
              { refl -> th == oi * ph == oi }
-antisym (o' th) ph with antisym th (o' oi -<- ph)
+antisym (o' th) ph with antisym th (o' oi -<- ph) 
 antisym (o' .(os oi)) (o' ph) | refl , refl , ()
-antisym (o' .(os oi)) (os ph) | refl , refl , ()
+antisym (o' .(os oi)) (os ph) | refl , refl , () 
 antisym (os th) (o' ph) with antisym th (o' oi -<- ph)
 antisym (os .(os oi)) (o' (o' ph)) | refl , refl , ()
-antisym (os .(os oi)) (o' (os ph)) | refl , refl , () 
+antisym (os .(os oi)) (o' (os ph)) | refl , refl , ()
 antisym (os th) (os ph) with antisym th ph
 antisym (os .oi) (os .oi) | refl , refl , refl = refl , refl , refl 
-antisym oz oz = refl , refl , refl
+antisym oz oz = refl , refl , refl 
 
 -- Deduce that oi is unique.
 
 oi-unique : forall {X}{xs : List X}(th : xs <: xs) -> th == oi
-oi-unique {xs = []} oz = refl
-oi-unique {xs = x ,- xs} (o' th) = {!!} 
-oi-unique {xs = x ,- xs} (os th) = os $= oi-unique {xs = xs} th
+oi-unique th with antisym th th
+oi-unique th | refl , fst , snd = fst 
+
 
 
 ------------------------------------------------------------------------------
@@ -165,22 +165,25 @@ oi-unique {xs = x ,- xs} (os th) = os $= oi-unique {xs = xs} th
 
 select : forall {X}{xs ys : List X}{P : X -> Set} ->
          xs <: ys -> All P ys -> All P xs
-select (o' th) (py ,- pys) = select th pys 
-select (os th) (py ,- pys) = py ,- select th pys
 select oz [] = []
+select (o' th) (py ,- pys) = select th pys
+select (os th) (py ,- pys) = py ,- select th pys  
 
 -- Now prove the following laws relating to selecting by the
 -- identity and composition.
 
 select-oi : forall {X}{xs : List X}{P : X -> Set} -> (pxs : All P xs) ->
             select oi pxs == pxs
-select-oi [] = refl
-select-oi (px ,- pxs) = px ,-_ $= select-oi pxs
+select-oi [] = refl 
+select-oi (px ,- pxs) = px ,-_ $= select-oi pxs 
 
 select-<- : forall {X}{xs ys zs : List X}{P : X -> Set} ->
             (th : xs <: ys)(ph : ys <: zs) -> (pzs : All P zs) ->
             select (th -<- ph) pzs == select th (select ph pzs)
-select-<- th ph pzs = {!!}
+select-<- th (o' ph) (pz ,- pzs) = select-<- th ph pzs
+select-<- (o' th) (os ph) (pz ,- pzs) = select-<- th ph pzs
+select-<- (os th) (os ph) (pz ,- pzs) = pz ,-_ $= select-<- th ph pzs
+select-<- oz oz [] = refl 
 
 
 ------------------------------------------------------------------------------
@@ -213,6 +216,7 @@ thinSplit : {X : Set}{xs zs : List X}(th : xs <: zs) ->
             Sg (ys <: zs) \ ph ->  -- ...but was in zs...
             Splitting th ph        -- ...hence forms a splitting.
 thinSplit th = {!!}
+
 
 -- Given a splitting, show that we can "riffle" together a bunch
 -- of "All P"-s for each selection to get an "All P" for the whole.
