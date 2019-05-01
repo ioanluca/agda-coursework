@@ -91,7 +91,8 @@ infixl 40 _-<-_
 -- depend on your definition of _-<-_).
 
 oi-<- : forall {X}{xs ys : List X}(ph : xs <: ys) -> oi -<- ph == ph
-oi-<- (o' ph) = o' $= oi-<- ph
+oi-<- (o' ph) with (oi -<- ph) | (oi-<- ph)
+oi-<- (o' {x} ph) | .ph | refl = refl
 oi-<- (os ph) = os $= oi-<- ph
 oi-<- oz = refl
 
@@ -175,7 +176,7 @@ select (os th) (py ,- pys) = py ,- select th pys
 select-oi : forall {X}{xs : List X}{P : X -> Set} -> (pxs : All P xs) ->
             select oi pxs == pxs
 select-oi [] = refl 
-select-oi (px ,- pxs) = px ,-_ $= select-oi pxs 
+select-oi (px ,- pxs) rewrite select-oi pxs = refl
 
 select-<- : forall {X}{xs ys zs : List X}{P : X -> Set} ->
             (th : xs <: ys)(ph : ys <: zs) -> (pzs : All P zs) ->
@@ -215,7 +216,11 @@ thinSplit : {X : Set}{xs zs : List X}(th : xs <: zs) ->
             Sg (List X) \ ys ->    -- ...what wasn't from xs...
             Sg (ys <: zs) \ ph ->  -- ...but was in zs...
             Splitting th ph        -- ...hence forms a splitting.
-thinSplit th = {!!}
+thinSplit (o' th) with thinSplit th
+thinSplit {zs = z ,- zs} (o' th) | ys , ph , sp = z ,- ys , os ph , split's sp
+thinSplit  (os th) with thinSplit th
+thinSplit  (os th) | ys , ph , sp = ys , o' ph , splits' sp
+thinSplit oz = [] , oz , splitzz
 
 
 -- Given a splitting, show that we can "riffle" together a bunch
@@ -226,7 +231,9 @@ riffle : forall {X : Set}{xs ys zs : List X}
                 {P : X -> Set} ->
                 All P xs -> Splitting th ph -> All P ys ->
                 All P zs
-riffle pxs s pys = {!!}
+riffle pxs (split's s) (py ,- pys) = py ,- riffle pxs s pys 
+riffle (px ,- pxs) (splits' s) pys = px ,- riffle pxs s pys
+riffle [] splitzz [] = []
 
 -- Moreover, we can use a splitting to invert "riffle", dealing
 -- out an "All P" for the whole list into the parts for each
@@ -242,7 +249,11 @@ data Deal {X : Set}{xs ys zs : List X}
 deal : {X : Set}{xs ys zs : List X}
        {th : xs <: zs}{ph : ys <: zs}(s : Splitting th ph)
        {P : X -> Set}(pzs : All P zs) -> Deal s pzs
-deal s pzs = {!!}
+deal splitzz [] = dealt [] []
+deal (split's s) (pz ,- pzs) with deal s pzs
+deal (split's s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt pxs (pz ,- pys ) 
+deal (splits' s) (pz ,- pzs) with deal s pzs
+deal (splits' s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt (pz ,- pxs) pys 
 
 
 ------------------------------------------------------------------------------
