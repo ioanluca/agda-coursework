@@ -91,7 +91,8 @@ infixl 40 _-<-_
 -- depend on your definition of _-<-_).
 
 oi-<- : forall {X}{xs ys : List X}(ph : xs <: ys) -> oi -<- ph == ph
-oi-<- (o' ph) = o' $= oi-<- ph
+oi-<- (o' ph) with (oi -<- ph) | (oi-<- ph)
+oi-<- (o' {x} ph) | .ph | refl = refl
 oi-<- (os ph) = os $= oi-<- ph
 oi-<- oz = refl
 
@@ -175,7 +176,7 @@ select (os th) (py ,- pys) = py ,- select th pys
 select-oi : forall {X}{xs : List X}{P : X -> Set} -> (pxs : All P xs) ->
             select oi pxs == pxs
 select-oi [] = refl 
-select-oi (px ,- pxs) = px ,-_ $= select-oi pxs 
+select-oi (px ,- pxs) rewrite select-oi pxs = refl
 
 select-<- : forall {X}{xs ys zs : List X}{P : X -> Set} ->
             (th : xs <: ys)(ph : ys <: zs) -> (pzs : All P zs) ->
@@ -215,7 +216,11 @@ thinSplit : {X : Set}{xs zs : List X}(th : xs <: zs) ->
             Sg (List X) \ ys ->    -- ...what wasn't from xs...
             Sg (ys <: zs) \ ph ->  -- ...but was in zs...
             Splitting th ph        -- ...hence forms a splitting.
-thinSplit th = {!!}
+thinSplit (o' th) with thinSplit th
+thinSplit {zs = z ,- zs} (o' th) | ys , ph , sp = z ,- ys , os ph , split's sp
+thinSplit  (os th) with thinSplit th
+thinSplit  (os th) | ys , ph , sp = ys , o' ph , splits' sp
+thinSplit oz = [] , oz , splitzz
 
 
 -- Given a splitting, show that we can "riffle" together a bunch
@@ -226,7 +231,9 @@ riffle : forall {X : Set}{xs ys zs : List X}
                 {P : X -> Set} ->
                 All P xs -> Splitting th ph -> All P ys ->
                 All P zs
-riffle pxs s pys = {!!}
+riffle pxs (split's s) (py ,- pys) = py ,- riffle pxs s pys 
+riffle (px ,- pxs) (splits' s) pys = px ,- riffle pxs s pys
+riffle [] splitzz [] = []
 
 -- Moreover, we can use a splitting to invert "riffle", dealing
 -- out an "All P" for the whole list into the parts for each
@@ -242,7 +249,11 @@ data Deal {X : Set}{xs ys zs : List X}
 deal : {X : Set}{xs ys zs : List X}
        {th : xs <: zs}{ph : ys <: zs}(s : Splitting th ph)
        {P : X -> Set}(pzs : All P zs) -> Deal s pzs
-deal s pzs = {!!}
+deal splitzz [] = dealt [] []
+deal (split's s) (pz ,- pzs) with deal s pzs
+deal (split's s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt pxs (pz ,- pys ) 
+deal (splits' s) (pz ,- pzs) with deal s pzs
+deal (splits' s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt (pz ,- pxs) pys 
 
 
 ------------------------------------------------------------------------------
@@ -278,11 +289,24 @@ deal s pzs = {!!}
 -- just variables and constructors. That means dependent pattern matching
 -- will play nice.
 
+-- _-<-_ : forall {X}{xs ys zs : List X} -> xs <: ys -> ys <: zs -> xs <: zs
+-- th -<- o' ph = o' (th -<- ph)
+-- o' th -<- os ph = o' (th -<- ph)
+-- os th -<- os ph = os (th -<- ph)
+-- oz -<- oz = oz
+
 data Composable-<- {X : Set}
      : {xs ys zs : List X}
        (th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
        -> Set where
   -- your constructors here!
+     co-th-o'ph : {z : X}{xs ys zs : List X}(th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
+      -> Composable-<- th ph thph -> Composable-<- {zs = z ,- zs} th (o' ph) (o' thph)
+     co-o'th-osph : {y : X}{xs ys zs : List X}(th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
+      -> Composable-<- th ph thph -> Composable-<- {ys = y ,- ys} (o' th) (os ph) (o' thph)
+     co-osth-osph : {x : X}{xs ys zs : List X}(th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
+      -> Composable-<- th ph thph -> Composable-<- {xs = x ,- xs} (os th) (os ph) (os thph)
+     co-oz-oz : Composable-<- oz oz oz
 
 -- Show that your definition really captures composability by
 -- proving the following.
@@ -291,7 +315,10 @@ composable-<- : forall {X : Set}{xs ys zs : List X}
                 (th : xs <: ys)(ph : ys <: zs) ->
                 Composable-<- th ph (th -<- ph)
   -- i.e., we have *at least* composition...
-composable-<- th ph = {!!}
+composable-<- th (o' ph) = co-th-o'ph th ph (th -<- ph) (composable-<- th ph)
+composable-<- (o' th) (os ph) = co-o'th-osph th ph (th -<- ph) (composable-<- th ph)
+composable-<- (os th) (os ph) = co-osth-osph th ph (th -<- ph) (composable-<- th ph)
+composable-<- oz oz = co-oz-oz
 
 composable-unique : forall {X : Set}{xs ys zs : List X}
                     {th : xs <: ys}{ph : ys <: zs}
@@ -300,7 +327,13 @@ composable-unique : forall {X : Set}{xs ys zs : List X}
                     Composable-<- th ph thph' ->
                     thph == thph'
   -- ...and nothing but composition.
-composable-unique c d = {!!}
+composable-unique (co-th-o'ph .th .ph thph₁ c) (co-th-o'ph th ph thph d) =
+   o' $= composable-unique c d
+composable-unique (co-o'th-osph .th .ph thph₁ c) (co-o'th-osph th ph thph d) =
+   o' $= composable-unique c d
+composable-unique (co-osth-osph .th .ph thph₁ c) (co-osth-osph th ph thph d) =
+   os $= composable-unique c d 
+composable-unique co-oz-oz co-oz-oz = refl
 
 -- Your prize for establishing the graph representation is to have a nice time
 -- showing that thinnings really are *embeddings* (or "monomorphisms").
@@ -313,7 +346,12 @@ composable-mono : forall {X}{xs ys zs : List X}
   {th th' : xs <: ys}{ph : ys <: zs}{ps : xs <: zs} ->
   Composable-<- th ph ps -> Composable-<- th' ph ps ->
   th == th'
-composable-mono c d = {!!}
+composable-mono (co-th-o'ph th₁ .ph .thph c) (co-th-o'ph th ph thph d) = composable-mono c d
+composable-mono (co-o'th-osph th₁ .ph .thph c) (co-o'th-osph th ph thph d) =
+                 o' $= composable-mono c d
+composable-mono (co-osth-osph th₁ .ph .thph c) (co-osth-osph th ph thph d) =
+                 os $= composable-mono c d
+composable-mono co-oz-oz co-oz-oz = refl
 
 -- Now use composable-<- and composable-mono to get a cheap proof of the
 -- following.
@@ -321,7 +359,9 @@ composable-mono c d = {!!}
 mono-<- : forall {X}{xs ys zs : List X}(th th' : xs <: ys)(ph : ys <: zs) ->
              th -<- ph == th' -<- ph ->
              th == th'
-mono-<- th th' ph q = {!!}
+mono-<- th th' ph q with composable-<- th ph | composable-<- th' ph
+...| c1 | c2 with th -<- ph | q
+mono-<- th th' ph q | c1 | c2 | _ | refl = composable-mono c1 c2 
 
 
 ------------------------------------------------------------------------------
@@ -375,7 +415,19 @@ open BackSquare
 pullback-<- : forall {X}{xs ys zs : List X} ->
               (th : xs <: zs)(ph : ys <: zs) ->
               BackSquare th ph
-pullback-<- th ph = {!!}
+pullback-<- (o' th) (o' ph) with pullback-<- th ph
+pullback-<- (o' th) (o' ph) | backSquare t0 t1 =
+       backSquare (co-th-o'ph _ th _ t0) (co-th-o'ph _ ph _ t1) 
+pullback-<- (o' th) (os ph) with pullback-<- th ph
+pullback-<- (o' th) (os ph) | backSquare t0 t1 =
+       backSquare (co-th-o'ph _ th _ t0) (co-o'th-osph _ ph _ t1) 
+pullback-<- (os th) (o' ph) with pullback-<- th ph
+pullback-<- (os th) (o' ph) | backSquare t0 t1 =
+       backSquare (co-o'th-osph _ th _ t0) (co-th-o'ph _ ph _ t1)
+pullback-<- (os th) (os ph) with pullback-<- th ph
+pullback-<- (os th) (os ph) | backSquare t0 t1 =
+       backSquare (co-o'th-osph _ th _ t0) (co-o'th-osph _ ph _ t1)
+pullback-<- oz oz = backSquare co-oz-oz co-oz-oz 
 
 -- Then show that every other BackSquare has a corner
 -- which embeds in the pullback, and that the resulting
