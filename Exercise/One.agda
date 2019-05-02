@@ -176,14 +176,14 @@ select (os th) (py ,- pys) = py ,- select th pys
 select-oi : forall {X}{xs : List X}{P : X -> Set} -> (pxs : All P xs) ->
             select oi pxs == pxs
 select-oi [] = refl 
-select-oi (px ,- pxs) rewrite select-oi pxs = refl
+select-oi (px ,- pxs) rewrite select-oi pxs = refl 
 
 select-<- : forall {X}{xs ys zs : List X}{P : X -> Set} ->
             (th : xs <: ys)(ph : ys <: zs) -> (pzs : All P zs) ->
             select (th -<- ph) pzs == select th (select ph pzs)
 select-<- th (o' ph) (pz ,- pzs) = select-<- th ph pzs
 select-<- (o' th) (os ph) (pz ,- pzs) = select-<- th ph pzs
-select-<- (os th) (os ph) (pz ,- pzs) = pz ,-_ $= select-<- th ph pzs
+select-<- (os th) (os ph) (pz ,- pzs) rewrite select-<- th ph pzs = refl
 select-<- oz oz [] = refl 
 
 
@@ -231,9 +231,9 @@ riffle : forall {X : Set}{xs ys zs : List X}
                 {P : X -> Set} ->
                 All P xs -> Splitting th ph -> All P ys ->
                 All P zs
-riffle pxs (split's s) (py ,- pys) = py ,- riffle pxs s pys 
+riffle pxs (split's s) (py ,- pys) = py ,- riffle pxs s pys
 riffle (px ,- pxs) (splits' s) pys = px ,- riffle pxs s pys
-riffle [] splitzz [] = []
+riffle pxs splitzz pys = [] 
 
 -- Moreover, we can use a splitting to invert "riffle", dealing
 -- out an "All P" for the whole list into the parts for each
@@ -265,19 +265,24 @@ deal (splits' s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt (pz ,- pxs)
 -- giving the explanations for why an output comes from some input.
 
 -- For example, the call graph of our boolean <= operator from Lecture.One
---   _<=_ : Nat -> Nat -> Two
---   zero <= y = tt
---   suc x <= zero = ff
---   suc x <= suc y = x <= y
+_<=b_ : Nat -> Nat -> Two
+zero <=b y = tt
+suc x <=b zero = ff
+suc x <=b suc y = x <=b y
 
 -- would be
---   data Graph<= : Nat -> Nat -> Two -> Set where
---     le-z-y : forall {y} -> Graph<= zero    y    tt
---     le-s-z : forall {x} -> Graph<= (suc x) zero ff
---     le-s-s : forall {x y b} -> Graph<= x y b -> Graph<= (suc x) (suc y) b
+data Graph<= : Nat -> Nat -> Two -> Set where
+   le-z-y : forall {y} -> Graph<= zero    y    tt
+   le-s-z : forall {x} -> Graph<= (suc x) zero ff
+   le-s-s : forall {x y b} -> Graph<= x y b -> Graph<= (suc x) (suc y) b
 
--- so that we can always show
---   graph<= : (x y : Nat) -> Graph<= x y (x <= y)
+-- so that we can always show 
+graph<=b : (x y : Nat) -> Graph<= x y (x <=b y)
+graph<=b zero y = le-z-y
+graph<=b (suc x) zero = le-s-z
+graph<=b (suc x) (suc y) = le-s-s (graph<=b x y)
+
+-- nice :d
 
 -- Define the inductive composability relation on three thinnings.
 -- This should correspond to your composition function, with one
@@ -440,4 +445,13 @@ pullback-best : forall {X}{xs ys zs : List X} ->
                 Sg (corner bs' <: corner bs) \ ps ->
                 Composable-<- ps (side0 bs) (side0 bs') *
                 Composable-<- ps (side1 bs) (side1 bs')
-pullback-best bs' = {!!}
+pullback-best (backSquare (co-th-o'ph th ph thph t0) (co-th-o'ph th₁ ph₁ .thph t1)) = pullback-best (backSquare t0 t1)
+pullback-best (backSquare (co-th-o'ph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
+pullback-best (backSquare (co-th-o'ph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , h1 , co-th-o'ph ps _ _ h2
+pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-th-o'ph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
+pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-th-o'ph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , co-th-o'ph ps _ _ h1 , h2
+pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
+pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , co-th-o'ph ps _ _ h1 , co-th-o'ph ps _ _ h2
+pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
+pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = {! ps!} , {!!} , {!!}
+pullback-best (backSquare co-oz-oz co-oz-oz) = oz , co-oz-oz , co-oz-oz 
