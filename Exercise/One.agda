@@ -66,6 +66,7 @@ pick4from4 = os (os (os (os oz))) ,- []
 thinOdds : List (1 ,- 3 ,- 5 ,- [] <: 0 ,- 1 ,- 2 ,- 3 ,- 4 ,- 5 ,- 6 ,- [])
 thinOdds = o' (os (o' (os (o' (os (o' oz)))))) ,- []
 
+-- MARK: 2/2
 
 ------------------------------------------------------------------------------
 -- 1.1 Categorical Structure
@@ -110,6 +111,7 @@ assoc-<- (o' th0) (os th1) (os th2) = o' $= assoc-<- th0 th1 th2
 assoc-<- (os th0) (os th1) (os th2) = os $= assoc-<- th0 th1 th2
 assoc-<- oz oz oz = refl
 
+-- MARK: 8/8
 
 ------------------------------------------------------------------------------
 -- 1.2 Emptiness
@@ -125,6 +127,8 @@ oe-unique : forall {X}{xs : List X}(th : [] <: xs) -> th == oe
 oe-unique {xs = []} oz = refl
 oe-unique {xs = x ,- xs} (o' th) = o' $= oe-unique {xs = xs} th
 
+
+-- MARK: 6/6
 
 ------------------------------------------------------------------------------
 -- 1.3 Antisymmetry
@@ -151,9 +155,9 @@ antisym oz oz = refl , refl , refl
 
 oi-unique : forall {X}{xs : List X}(th : xs <: xs) -> th == oi
 oi-unique th with antisym th th
-oi-unique th | refl , fst , snd = fst 
+oi-unique th | refl , fst , snd = snd
 
-
+-- MARK: 6/6
 
 ------------------------------------------------------------------------------
 -- 1.4 Thinnings as selections
@@ -185,6 +189,8 @@ select-<- th (o' ph) (pz ,- pzs) = select-<- th ph pzs
 select-<- (o' th) (os ph) (pz ,- pzs) = select-<- th ph pzs
 select-<- (os th) (os ph) (pz ,- pzs) rewrite select-<- th ph pzs = refl
 select-<- oz oz [] = refl 
+
+-- MARK: 8/8
 
 
 ------------------------------------------------------------------------------
@@ -255,6 +261,7 @@ deal (split's s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt pxs (pz ,- 
 deal (splits' s) (pz ,- pzs) with deal s pzs
 deal (splits' s) (pz ,- .(riffle pxs s pys)) | dealt pxs pys = dealt (pz ,- pxs) pys 
 
+-- MARK: 10/10
 
 ------------------------------------------------------------------------------
 -- 1.6 Composability as a relation
@@ -364,10 +371,14 @@ composable-mono co-oz-oz co-oz-oz = refl
 mono-<- : forall {X}{xs ys zs : List X}(th th' : xs <: ys)(ph : ys <: zs) ->
              th -<- ph == th' -<- ph ->
              th == th'
+
+
 mono-<- th th' ph q with composable-<- th ph | composable-<- th' ph
 ...| c1 | c2 with th -<- ph | q
 mono-<- th th' ph q | c1 | c2 | _ | refl = composable-mono c1 c2 
 
+
+-- MARK: 10/10
 
 ------------------------------------------------------------------------------
 -- 1.7 Pullbacks (pointwise "and")
@@ -453,5 +464,5 @@ pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-th-o'ph th₁ ph₁ .
 pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
 pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , co-th-o'ph ps _ _ h1 , co-th-o'ph ps _ _ h2
 pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = {!ps!} , {!!} , {!!}
+pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = {!!} , {!!} , {!!}
 pullback-best (backSquare co-oz-oz co-oz-oz) = oz , co-oz-oz , co-oz-oz 
