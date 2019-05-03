@@ -422,16 +422,16 @@ pullback-<- : forall {X}{xs ys zs : List X} ->
               BackSquare th ph
 pullback-<- (o' th) (o' ph) with pullback-<- th ph
 pullback-<- (o' th) (o' ph) | backSquare t0 t1 =
-       backSquare (co-th-o'ph _ th _ t0) (co-th-o'ph _ ph _ t1) 
+       backSquare (co-th-o'ph _ _ _ t0) (co-th-o'ph _ _ _ t1) 
 pullback-<- (o' th) (os ph) with pullback-<- th ph
 pullback-<- (o' th) (os ph) | backSquare t0 t1 =
-       backSquare (co-th-o'ph _ th _ t0) (co-o'th-osph _ ph _ t1) 
+       backSquare (co-th-o'ph _ _ _ t0) (co-o'th-osph _ _ _ t1) 
 pullback-<- (os th) (o' ph) with pullback-<- th ph
 pullback-<- (os th) (o' ph) | backSquare t0 t1 =
-       backSquare (co-o'th-osph _ th _ t0) (co-th-o'ph _ ph _ t1)
+       backSquare (co-o'th-osph _ _ _ t0) (co-th-o'ph _ _ _ t1)
 pullback-<- (os th) (os ph) with pullback-<- th ph
 pullback-<- (os th) (os ph) | backSquare t0 t1 =
-       backSquare (co-o'th-osph _ th _ t0) (co-o'th-osph _ ph _ t1)
+       backSquare (co-o'th-osph _ _ _ t0) (co-o'th-osph _ _ _ t1)
 pullback-<- oz oz = backSquare co-oz-oz co-oz-oz 
 
 -- Then show that every other BackSquare has a corner
@@ -453,5 +453,5 @@ pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-th-o'ph th₁ ph₁ .
 pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
 pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , co-th-o'ph ps _ _ h1 , co-th-o'ph ps _ _ h2
 pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = {! ps!} , {!!} , {!!}
+pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = {!ps!} , {!!} , {!!}
 pullback-best (backSquare co-oz-oz co-oz-oz) = oz , co-oz-oz , co-oz-oz 

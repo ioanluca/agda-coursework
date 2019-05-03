@@ -148,7 +148,10 @@ module _ {Obj : Set}{Arr : Obj -> Obj -> Set}{I : Set}(C : Category Arr) where
   -- by picking an index.
 
   Point : (i : I) -> Functor (I -C> C) C \ X -> X i
-  Point i = {!!}
+  Point i = record
+            { map = \ f -> f i  ;
+              mapidArr = refl ;
+              map-arr- = \ f g -> refl }
 
 module _ (I : Set) where
   open Category (I -C> SET)
@@ -162,7 +165,7 @@ module _ (I : Set) where
                (ALL I -Func- Point SET js)
                (ALL I -Func- Point SET is)
   transform (selectNT th) X = select th
-  natural (selectNT th) f = {!!}
+  natural (selectNT th) f = ext \ f -> {!!}
 
   -- Show that tabulation fuses with selection.
 
