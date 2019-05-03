@@ -54,6 +54,7 @@ module _ {Obj : Set}{Arr : Obj -> Obj -> Set}{I J : Set}
       mapidArr = refl ;
       map-arr- = \ x g -> refl }
 
+-- MARK: 4/4
 
 ------------------------------------------------------------------------------
 -- FUNCTORIALITY OF ALL
@@ -91,6 +92,8 @@ module _ where
             mapidArr = ext \ is -> ext (\ as -> helper1 is as) ;
             map-arr- = \ f g -> ext \ is -> ext \ as -> helper2 is as  }
 
+
+-- MARK: 6/6
 
 ------------------------------------------------------------------------------
 -- ALL BY TABULATION
@@ -134,6 +137,8 @@ module _ (I : Set) where  -- fix an element set and open handy kit
   tabulateNT : NaturalTransformation AllMem (ALL I)
   transform tabulateNT _ = tabulate
   natural tabulateNT = \ f -> ext (\ is -> ext (\ g -> helper f is g)) 
+
+-- MARK: 8/8
 
 
 ------------------------------------------------------------------------------
