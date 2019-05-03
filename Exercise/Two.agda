@@ -29,7 +29,13 @@ module _ {Obj : Set}{Arr : Obj -> Obj -> Set}(I : Set)(C : Category Arr) where
   -- arrows are index-respecting families of underlying arrows
 
   _-C>_ : Category {I -> Obj} \ S T -> (i : I) -> Arr (S i) (T i)
-  _-C>_ = {!!}
+  _-C>_ = record
+            { idArr = \ i -> idArr
+            ; _-arr-_ = \ f1 f2 i -> f1 i -arr- f2 i 
+            ; idArr-arr- = \ f -> ext \ i -> idArr-arr- (f i) 
+            ; _-arr-idArr = \ f -> ext (\ i -> f i -arr-idArr)
+            ; assoc-arr- = \ f g h -> ext \ i -> assoc-arr- (f i) (g i) (h i)
+            }
 
 
 -- Now we give you a function f : I -> J between two index sets.
@@ -43,7 +49,10 @@ module _ {Obj : Set}{Arr : Obj -> Obj -> Set}{I J : Set}
   -- Show that you get a functor from J-indexed things to I-indexed things.
 
   Reindex : Functor (J -C> C) (I -C> C) (f -_)
-  Reindex = {!!}
+  Reindex = record
+    { map = \ x i -> x (f i) ;
+      mapidArr = refl ;
+      map-arr- = \ x g -> refl }
 
 
 ------------------------------------------------------------------------------
@@ -60,10 +69,27 @@ module _ where
   all : {I : Set}{P Q : I -> Set} ->
         [ P -:> Q ] ->
         [ All P -:> All Q ]
-  all f is ps = {!!}
+  all f [] [] = []
+  all f (i ,- is) (p ,- ps) = f i p ,- all f is ps
+
+  helper1 : forall {I} {A : I -> Set} (is : List I)
+                 (as : All A is) ->
+          all (\ i x -> x) is as == as
+  helper1 [] [] = refl
+  helper1 (i ,- is) (a ,- as) rewrite helper1 is as = refl
+
+  helper2 : forall {I} {A B C : I -> Set} {f : (i : I) -> A i -> B i}
+                 {g : (i : I) -> B i -> C i} (is : List I) (as : All A is) ->
+          all (\ i a -> g i (f i a)) is as == all g is (all f is as)
+  helper2 [] [] = refl
+  helper2 {f = f} {g = g} (i ,- is) (a ,- as) = g i (f i a) ,-_ $= helper2 is as   
+
 
   ALL : (I : Set) -> Functor (I -C> SET) (List I -C> SET) All
-  ALL I = {!!}
+  ALL I = record
+          { map = all;
+            mapidArr = ext \ is -> ext (\ as -> helper1 is as) ;
+            map-arr- = \ f g -> ext \ is -> ext \ as -> helper2 is as  }
 
 
 ------------------------------------------------------------------------------
@@ -80,7 +106,8 @@ i <- is = (i ,- []) <: is
 
 tabulate : {I : Set}{P : I -> Set}(is : List I) ->
              [ (_<- is) -:> P ] -> All P is
-tabulate is f = {!!}
+tabulate [] f = []
+tabulate (i ,- is) f = f i (os oe) ,- tabulate is \ i th -> f i (o' th)
 
 module _ (I : Set) where  -- fix an element set and open handy kit
   open Category (I -C> SET)
@@ -91,13 +118,22 @@ module _ (I : Set) where  -- fix an element set and open handy kit
   -- also gives you a functor.
 
   AllMem : Functor (I -C> SET) (List I -C> SET) \ P is -> [ (_<- is) -:> P ]
-  AllMem = {!!}
+  AllMem = record
+         { map = \ f is g i th -> f i (g i th) ;
+           mapidArr = refl ;
+           map-arr- = \ f g -> refl }
 
   -- Prove that tabulate is natural.
 
+  helper : forall {I} {X Y : I -> Set} (f : (i : I) -> X i -> Y i)
+                (is : List I) (g : (i : I) -> i ,- [] <: is -> X i) ->
+         all f is (tabulate is g) == tabulate is (\ i th -> f i (g i th))
+  helper f [] g = refl
+  helper f (i ,- is) g rewrite helper f is (\ i th -> g i (o' th)) = refl 
+
   tabulateNT : NaturalTransformation AllMem (ALL I)
   transform tabulateNT _ = tabulate
-  natural tabulateNT = {!!}
+  natural tabulateNT = \ f -> ext (\ is -> ext (\ g -> helper f is g)) 
 
 
 ------------------------------------------------------------------------------
