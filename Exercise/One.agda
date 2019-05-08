@@ -312,13 +312,13 @@ data Composable-<- {X : Set}
        (th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
        -> Set where
   -- your constructors here!
-     co-th-o'ph : {z : X}{xs ys zs : List X}(th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
+     nvm-drop-drop : {z : X}{xs ys zs : List X}{th : xs <: ys}{ph : ys <: zs}{thph : xs <: zs}
       -> Composable-<- th ph thph -> Composable-<- {zs = z ,- zs} th (o' ph) (o' thph)
-     co-o'th-osph : {y : X}{xs ys zs : List X}(th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
+     drop-keep-drop : {y : X}{xs ys zs : List X}{th : xs <: ys}{ph : ys <: zs}{thph : xs <: zs}
       -> Composable-<- th ph thph -> Composable-<- {ys = y ,- ys} (o' th) (os ph) (o' thph)
-     co-osth-osph : {x : X}{xs ys zs : List X}(th : xs <: ys)(ph : ys <: zs)(thph : xs <: zs)
+     keep-keep-keep : {x : X}{xs ys zs : List X}{th : xs <: ys}{ph : ys <: zs}{thph : xs <: zs}
       -> Composable-<- th ph thph -> Composable-<- {xs = x ,- xs} (os th) (os ph) (os thph)
-     co-oz-oz : Composable-<- oz oz oz
+     e-e-e : Composable-<- oz oz oz
 
 -- Show that your definition really captures composability by
 -- proving the following.
@@ -327,10 +327,10 @@ composable-<- : forall {X : Set}{xs ys zs : List X}
                 (th : xs <: ys)(ph : ys <: zs) ->
                 Composable-<- th ph (th -<- ph)
   -- i.e., we have *at least* composition...
-composable-<- th (o' ph) = co-th-o'ph th ph (th -<- ph) (composable-<- th ph)
-composable-<- (o' th) (os ph) = co-o'th-osph th ph (th -<- ph) (composable-<- th ph)
-composable-<- (os th) (os ph) = co-osth-osph th ph (th -<- ph) (composable-<- th ph)
-composable-<- oz oz = co-oz-oz
+composable-<- th (o' ph) = nvm-drop-drop (composable-<- th ph)
+composable-<- (o' th) (os ph) = drop-keep-drop (composable-<- th ph)
+composable-<- (os th) (os ph) = keep-keep-keep (composable-<- th ph)
+composable-<- oz oz = e-e-e 
 
 composable-unique : forall {X : Set}{xs ys zs : List X}
                     {th : xs <: ys}{ph : ys <: zs}
@@ -339,13 +339,10 @@ composable-unique : forall {X : Set}{xs ys zs : List X}
                     Composable-<- th ph thph' ->
                     thph == thph'
   -- ...and nothing but composition.
-composable-unique (co-th-o'ph .th .ph thph₁ c) (co-th-o'ph th ph thph d) =
-   o' $= composable-unique c d
-composable-unique (co-o'th-osph .th .ph thph₁ c) (co-o'th-osph th ph thph d) =
-   o' $= composable-unique c d
-composable-unique (co-osth-osph .th .ph thph₁ c) (co-osth-osph th ph thph d) =
-   os $= composable-unique c d 
-composable-unique co-oz-oz co-oz-oz = refl
+composable-unique (nvm-drop-drop c) (nvm-drop-drop d) = o' $= composable-unique c d
+composable-unique (drop-keep-drop c) (drop-keep-drop d) = o' $= composable-unique c d 
+composable-unique (keep-keep-keep c) (keep-keep-keep d) = os $= composable-unique c d
+composable-unique e-e-e e-e-e = refl 
 
 -- Your prize for establishing the graph representation is to have a nice time
 -- showing that thinnings really are *embeddings* (or "monomorphisms").
@@ -358,12 +355,10 @@ composable-mono : forall {X}{xs ys zs : List X}
   {th th' : xs <: ys}{ph : ys <: zs}{ps : xs <: zs} ->
   Composable-<- th ph ps -> Composable-<- th' ph ps ->
   th == th'
-composable-mono (co-th-o'ph th₁ .ph .thph c) (co-th-o'ph th ph thph d) = composable-mono c d
-composable-mono (co-o'th-osph th₁ .ph .thph c) (co-o'th-osph th ph thph d) =
-                 o' $= composable-mono c d
-composable-mono (co-osth-osph th₁ .ph .thph c) (co-osth-osph th ph thph d) =
-                 os $= composable-mono c d
-composable-mono co-oz-oz co-oz-oz = refl
+composable-mono (nvm-drop-drop c) (nvm-drop-drop d) = composable-mono c d
+composable-mono (drop-keep-drop c) (drop-keep-drop d) = o' $= composable-mono c d
+composable-mono (keep-keep-keep c) (keep-keep-keep d) = os $= composable-mono c d
+composable-mono e-e-e e-e-e = refl 
 
 -- Now use composable-<- and composable-mono to get a cheap proof of the
 -- following.
@@ -432,18 +427,15 @@ pullback-<- : forall {X}{xs ys zs : List X} ->
               (th : xs <: zs)(ph : ys <: zs) ->
               BackSquare th ph
 pullback-<- (o' th) (o' ph) with pullback-<- th ph
-pullback-<- (o' th) (o' ph) | backSquare t0 t1 =
-       backSquare (co-th-o'ph _ _ _ t0) (co-th-o'ph _ _ _ t1) 
-pullback-<- (o' th) (os ph) with pullback-<- th ph
-pullback-<- (o' th) (os ph) | backSquare t0 t1 =
-       backSquare (co-th-o'ph _ _ _ t0) (co-o'th-osph _ _ _ t1) 
+pullback-<- (o' th) (o' ph) | backSquare m p = backSquare (nvm-drop-drop m) (nvm-drop-drop p)
 pullback-<- (os th) (o' ph) with pullback-<- th ph
-pullback-<- (os th) (o' ph) | backSquare t0 t1 =
-       backSquare (co-o'th-osph _ _ _ t0) (co-th-o'ph _ _ _ t1)
+pullback-<- (os th) (o' ph) | backSquare m p = backSquare (drop-keep-drop m) (nvm-drop-drop p)
+pullback-<- (o' th) (os ph) with pullback-<- th ph
+pullback-<- (o' th) (os ph) | backSquare m p = backSquare (nvm-drop-drop m) (drop-keep-drop p)
 pullback-<- (os th) (os ph) with pullback-<- th ph
-pullback-<- (os th) (os ph) | backSquare t0 t1 =
-       backSquare (co-o'th-osph _ _ _ t0) (co-o'th-osph _ _ _ t1)
-pullback-<- oz oz = backSquare co-oz-oz co-oz-oz 
+pullback-<- (os th) (os ph) | backSquare m p = backSquare (keep-keep-keep m) (keep-keep-keep p)
+pullback-<- oz oz = backSquare e-e-e e-e-e
+
 
 -- Then show that every other BackSquare has a corner
 -- which embeds in the pullback, and that the resulting
@@ -456,13 +448,28 @@ pullback-best : forall {X}{xs ys zs : List X} ->
                 Sg (corner bs' <: corner bs) \ ps ->
                 Composable-<- ps (side0 bs) (side0 bs') *
                 Composable-<- ps (side1 bs) (side1 bs')
-pullback-best (backSquare (co-th-o'ph th ph thph t0) (co-th-o'ph th₁ ph₁ .thph t1)) = pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-th-o'ph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-th-o'ph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , h1 , co-th-o'ph ps _ _ h2
-pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-th-o'ph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-th-o'ph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , co-th-o'ph ps _ _ h1 , h2
-pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-o'th-osph th ph thph t0) (co-o'th-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = ps , co-th-o'ph ps _ _ h1 , co-th-o'ph ps _ _ h2
-pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) with pullback-best (backSquare t0 t1)
-pullback-best (backSquare (co-osth-osph th ph thph t0) (co-osth-osph th₁ ph₁ .thph t1)) | ps , h1 , h2 = {!!} , {!!} , {!!}
-pullback-best (backSquare co-oz-oz co-oz-oz) = oz , co-oz-oz , co-oz-oz 
+
+pullback-best (backSquare (nvm-drop-drop m) (nvm-drop-drop p)) =
+  pullback-best (backSquare m p)
+
+pullback-best (backSquare (nvm-drop-drop m) (drop-keep-drop p))
+  with pullback-best (backSquare m p)
+pullback-best (backSquare (nvm-drop-drop m) (drop-keep-drop p))
+  | ps , t0 , t1 = ps , (t0 , nvm-drop-drop t1)
+
+pullback-best (backSquare (drop-keep-drop m) (nvm-drop-drop p))
+  with pullback-best (backSquare m p)
+pullback-best (backSquare (drop-keep-drop m) (nvm-drop-drop p))
+  | ps , t0 , t1 = ps , nvm-drop-drop t0 , t1
+
+pullback-best (backSquare (drop-keep-drop m) (drop-keep-drop p))
+  with pullback-best (backSquare m p)
+pullback-best (backSquare (drop-keep-drop m) (drop-keep-drop p))
+  | ps , t0 , t1 = o' ps , (drop-keep-drop t0 , drop-keep-drop t1)
+
+pullback-best (backSquare (keep-keep-keep m) (keep-keep-keep p))
+  with pullback-best (backSquare m p )
+pullback-best (backSquare (keep-keep-keep m) (keep-keep-keep p))
+  | ps , t0 , t1 = os ps  , keep-keep-keep t0 , keep-keep-keep t1
+
+pullback-best (backSquare e-e-e e-e-e) = oz , e-e-e , e-e-e 
