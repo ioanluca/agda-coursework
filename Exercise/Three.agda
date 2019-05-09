@@ -1,3 +1,4 @@
+-- TOTAL MARK: 12/60
 {-# OPTIONS --type-in-type #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
@@ -101,12 +102,16 @@ Functor.map-arr- (VEC n) f g = ext \ v -> prf f g v where
   prf f g [] = refl
   prf f g (x ,- v) = g (f x) ,-_ $= prf f g v
 
+-- MARK: 1/1
+
 -- ??? 3.2
 -- Find the components to make vectors applicative, by pointwise application.
 
 VApp : forall n -> Applicative \ X -> Vec X n
 Applicative.pure (VApp n) = vPure
 Applicative._<*>_ (VApp n) = _<*V>_
+
+-- MARK: 1/1
 
 -- ??? 3.3
 -- Show that vectors respect One and * on types.
@@ -117,6 +122,7 @@ void <> = vPure <>
 zip : forall {n S T} -> Vec S n * Vec T n -> Vec (S * T) n
 zip (ss , ts) = vPure _,_ <*V> ss <*V> ts
 
+-- MARK: 1/1
 
 ------------------------------------------------------------------------------
 --  Pasting Algebras (for Vectors)
@@ -136,6 +142,8 @@ Pasting C X = [ [[ C ]]Cr X -:> X ]
 
 vecPaste : forall {X} -> Pasting NatCut (Vec X)
 vecPaste .(n +N m) ((n , m , refl) , v1 ,- v2 ,- []) = v1 +V v2
+
+-- MARK: 2/2
 
 {-END OF COMMENT mango-}
 
@@ -168,6 +176,7 @@ Cuts ((C <! cs) >+< (D <! ds)) o = C o + D o
 pieces ((C <! cs) >+< (D <! ds)) (inl c) = cs c
 pieces ((C <! cs) >+< (D <! ds)) (inr d) = ds d
 
+-- MARK: 2/2
 
 -- ??? 3.6
 -- Right and Left Framing
@@ -191,6 +200,8 @@ Cuts (J |< (C <! cs)) (j , o) = C o
 pieces (J |< (C <! cs)) {j , o} c =
   list (\ x -> j , x) (cs c)
 
+-- MARK: 2/2
+
 -- Intuition:
 -- If you know how to cut up a number into parts, then you know how to
 -- cut up a rectangle whose width is that number into subrectangles
@@ -211,6 +222,7 @@ _|+|_ : forall {I J} -> I <| I -> J <| J -> (I * J) <| (I * J)
 
 C |+| D = (C >| _) >+< (_ |< D)
 
+-- MARK: 2/2
 
 -- Hint: use framing and angelic choice, of course!
 
@@ -252,6 +264,8 @@ example = < inl (8 , 5 , refl) ,
   leaf (square 2) ,- < inl (1 , 1 , refl) ,
   leaf (square 1) ,- (leaf (square 1))
   ,- [] > ,- [] > ,- [] > ,- [] > ,- [] >
+
+-- MARK: 1/1
 
 -- Historical note:
 -- This is exactly Euclid's algorithm for computing the greatest common

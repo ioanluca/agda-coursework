@@ -1,3 +1,4 @@
+-- TOTAL MARK: 59/60
 {-# OPTIONS --type-in-type #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
@@ -198,6 +199,8 @@ module _ (I : Set) where
   positions : (is : List I) -> All (_<- is) is
   positions is = tabulate is \ i -> id
 
+-- MARK: 6/6
+
   -- Construct a natural transformation which extracts the only element
   -- from an All P (i ,- [])
 
@@ -211,6 +214,8 @@ module _ (I : Set) where
   onlyNT = record
            { transform = \ P i -> getOnlyOne;
              natural = \ f -> ext \ i -> ext \ {(p ,- []) -> refl }}
+
+-- MARK: 2/2
 
   -- From these components, assemble the natural transformation which projects
   -- one element from a bunch. That is, if we have (x : i <- is) and we have
@@ -232,6 +237,7 @@ module _ (I : Set) where
 
     [QED]
 
+-- MARK: 3/3
 
   -- Show that tabulating projections is the identity.
 
@@ -269,6 +275,7 @@ module _ (I : Set) where
     ps1
     [QED]
 
+-- MARK: 7/7
 
 ------------------------------------------------------------------------------
 -- HOW TO CUT THINGS UP
@@ -308,7 +315,7 @@ module _ {O I : Set} where
       (cu ,_) $= (map-arr- (ALL _) f g =$ ps cu =$= reff as) }
     }
 
-
+-- MARK: 2/2
 
   -- Meanwhile, there is a concrete way to represent natural transformations
   -- between two such functors.
@@ -334,6 +341,10 @@ module _ {O I : Set} where
       ext \ o -> ext \ {(cu , ps) -> {!natCutHelper!} } 
         
 
+-- F: right transformation, but no naturality proof
+
+-- MARK: 1/2 (one more for the naturality proof)
+
     -- Extract a Cutmorph from an arbitrary natural transformation by choosing
     -- a suitable element type.
 
@@ -354,6 +365,8 @@ module _ {O I : Set} where
    cu'' , all (\ i x -> getOnlyOne I (select x snd)) _ snd1
 
 
+-- MARK: 4/4
+
   -- We have left the following goal commented out, because it involves more heat
   -- than light.
   -- CUTMORPH : Category Cutmorph
@@ -361,6 +374,7 @@ module _ {O I : Set} where
 
   --TODO use tool for categories here?
 
+-- F: Note that we are not asking you to prove the laws! (It gets too ugly.)
 
 ------------------------------------------------------------------------------
 -- HOW TO CUT THINGS UP INTO LOTS OF LITTLE TINY PIECES
@@ -398,6 +412,8 @@ module _ {I : Set}(F : I <| I) where
     allTreeIter [] [] = []
     allTreeIter (i ,- is) (t ,- ts) = treeIter i t ,- allTreeIter is ts
 
+
+-- MARK: 5/5
 
   module _ where
     open Category (I -C> SET)
@@ -523,6 +539,7 @@ module _ {I : Set}(F : I <| I) where
      tree treeJoin -arr- treeJoin
      [QED]
 
+-- MARK: 9/9
 
 ------------------------------------------------------------------------------
 -- AND RELAX
@@ -549,6 +566,8 @@ bigTree X x (suc n) =
      bigTree X x n ,-
      bigTree X x n ,-
      [] >
+
+-- MARK: 2/2
 
 -- We'll see more of Tree and NatCut next time...
 

@@ -1,3 +1,4 @@
+-- TOTAL MARK: 60/60
 {-# OPTIONS --allow-unsolved-metas #-}
 module Exercise.One where
 
@@ -473,3 +474,5 @@ pullback-best (backSquare (keep-keep-keep m) (keep-keep-keep p))
   | ps , t0 , t1 = os ps  , keep-keep-keep t0 , keep-keep-keep t1
 
 pullback-best (backSquare e-e-e e-e-e) = oz , e-e-e , e-e-e 
+
+-- MARK: 10/10
