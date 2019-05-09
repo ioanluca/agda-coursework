@@ -203,7 +203,7 @@ module _ (I : Set) where
 
   getOnlyOne : {I : Set}{i : I}{P : I -> Set} ->
                All P (i ,- []) -> P i
-  getOnlyOne (p ,- []) = p
+  getOnlyOne (p ,- ps) = p
 
   onlyNT : NaturalTransformation
             (ALL I -Func- Reindex (_,- []) SET)
@@ -239,7 +239,7 @@ module _ (I : Set) where
   tabulateProject : {P : I -> Set}{is : List I}(ps : All P is) ->
    tabulate is (\ i x -> transform (projectNT x) P ps) == ps
   tabulateProject [] = refl
-  tabulateProject (p ,- ps) = {!p ,-_!} $= tabulateProject ps
+  tabulateProject (p ,- ps) = p ,-_ $= tabulateProject ps
 
 
   -- Show that projecting from a tabulation applies the tabulated function.
@@ -249,7 +249,7 @@ module _ (I : Set) where
     {i : I}(x : i <- is) ->
     transform (projectNT x) P (tabulate is f) == f i x
   projectTabulate f (o' x) = projectTabulate _ x
-  projectTabulate f (os x) = {!f _!} $= (os $= sym (oe-unique x)) 
+  projectTabulate f (os x) = f _ $= (os $= sym (oe-unique x)) 
 
 
   -- A useful way to show that two "All" structures are equal is to show that
