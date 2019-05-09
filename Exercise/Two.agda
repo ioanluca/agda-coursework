@@ -110,7 +110,8 @@ i <- is = (i ,- []) <: is
 tabulate : {I : Set}{P : I -> Set}(is : List I) ->
              [ (_<- is) -:> P ] -> All P is
 tabulate [] f = []
-tabulate (i ,- is) f = f i (os oe) ,- tabulate is \ i th -> f i (o' th)
+tabulate (i ,- is) f = f i (os oe) ,- tabulate is \ i -> o' - f i 
+
 
 module _ (I : Set) where  -- fix an element set and open handy kit
   open Category (I -C> SET)
@@ -170,28 +171,46 @@ module _ (I : Set) where
                (ALL I -Func- Point SET js)
                (ALL I -Func- Point SET is)
   transform (selectNT th) X = select th
-  natural (selectNT th) f = ext \ f -> {!!}
+  natural (selectNT th) f = ext \ ps -> prf th f ps where
+      prf : forall {I} {is js : List I} {X Y : I -> Set} (th : is <: js)
+             (f : (i : I) -> X i -> Y i) (ps : All X js) ->
+            all f is (select th ps) == select th (all f js ps)
+      prf (o' th) f (p ,- ps) =  prf th f ps 
+      prf (os th) f (p ,- ps) =  _ ,-_ $= prf th f ps
+      prf oz f [] = refl 
+
 
   -- Show that tabulation fuses with selection.
 
   selectTabulate : {I : Set}{P : I -> Set}{is js : List I}
       (th : is <: js)(f : [ (_<- js) -:> P ]) ->
       select th (tabulate js f) == tabulate is \ i x -> f i (x -<- th)
-  selectTabulate th f = {!!}
+  selectTabulate (o' th) f = selectTabulate th \ i ph -> f i (o' ph)
+  selectTabulate (os th) f =
+    reff (\ p ps -> p ,- ps)
+    =$= ((\ x -> f _ x) $= ((\ x -> os x) $= sym (oe-unique (oe -<- th))))
+    =$= selectTabulate th \ i ph -> f i (o' ph)
+  selectTabulate oz f = refl
 
   -- Construct the proof that all elements of a list have the property
   -- of being somewhere in the list.
 
   positions : (is : List I) -> All (_<- is) is
-  positions is = tabulate is {!!}
+  positions is = tabulate is \ i -> id
 
   -- Construct a natural transformation which extracts the only element
   -- from an All P (i ,- [])
 
+  getOnlyOne : {I : Set}{i : I}{P : I -> Set} ->
+               All P (i ,- []) -> P i
+  getOnlyOne (p ,- []) = p
+
   onlyNT : NaturalTransformation
             (ALL I -Func- Reindex (_,- []) SET)
             (ID (I -C> SET))
-  onlyNT = {!!}
+  onlyNT = record
+           { transform = \ P i -> getOnlyOne;
+             natural = \ f -> ext \ i -> ext \ {(p ,- []) -> refl }}
 
   -- From these components, assemble the natural transformation which projects
   -- one element from a bunch. That is, if we have (x : i <- is) and we have
@@ -199,13 +218,29 @@ module _ (I : Set) where
 
   projectNT : {i : I}{is : List I}(x : i <- is) ->
               NaturalTransformation (ALL I -Func- Point SET is) (Point SET i)
-  projectNT x = {!!}
+  transform (projectNT x) P ps = transform onlyNT P _ (transform (selectNT x) P ps)
+  natural (projectNT x) f = ext \ ps ->
+    f _ (getOnlyOne (select x ps))
+
+    =[ natural onlyNT f =$ _ =$ (select x ps) >=
+
+    getOnlyOne (all f _ (select x ps))
+
+    =[ getOnlyOne $= (natural (selectNT x) f =$ ps) >=
+
+    getOnlyOne (select x (all f _ ps))
+
+    [QED]
+
 
   -- Show that tabulating projections is the identity.
 
+
   tabulateProject : {P : I -> Set}{is : List I}(ps : All P is) ->
-    tabulate is (\ i x -> transform (projectNT x) P ps) == ps
-  tabulateProject ps = {!!}
+   tabulate is (\ i x -> transform (projectNT x) P ps) == ps
+  tabulateProject [] = refl
+  tabulateProject (p ,- ps) = {!p ,-_!} $= tabulateProject ps
+
 
   -- Show that projecting from a tabulation applies the tabulated function.
 
@@ -213,7 +248,9 @@ module _ (I : Set) where
     (f : (i : I) -> i <- is -> P i)
     {i : I}(x : i <- is) ->
     transform (projectNT x) P (tabulate is f) == f i x
-  projectTabulate f x = {!!}
+  projectTabulate f (o' x) = projectTabulate _ x
+  projectTabulate f (os x) = {!f _!} $= (os $= sym (oe-unique x)) 
+
 
   -- A useful way to show that two "All" structures are equal is to show that
   -- they agree at each projection. Make it so! Hint: tabulateProject.
@@ -222,8 +259,15 @@ module _ (I : Set) where
     ((i : I)(x : i <- is) ->
       transform (projectNT x) P ps0 == transform (projectNT x) P ps1) ->
     ps0 == ps1
-  eqAll {ps0 = ps0}{ps1 = ps1} q = {!!}
-  
+  eqAll {ps0 = ps0}{ps1 = ps1} q =
+    ps0
+      =< tabulateProject ps0 ]=
+    tabulate _ (\ i x -> getOnlyOne (select x ps0))
+      =[ tabulate _ $= (ext \ i -> ext \ x -> q i x) >=
+    tabulate _ (\ i x -> getOnlyOne (select x ps1))
+      =[ tabulateProject ps1  >=
+    ps1
+    [QED]
 
 
 ------------------------------------------------------------------------------
@@ -256,7 +300,14 @@ module _ {O I : Set} where
 
   [[_]]CrF : (F : O <| I) ->
                Functor (I -C> SET) (O -C> SET) [[ F ]]Cr
-  [[ Cu <! ps ]]CrF = {!!}
+  [[ Cu <! ps ]]CrF = record
+    { map = \ {f o (cu , as) -> cu , all f (ps cu) as }
+    ; mapidArr = ext \ o -> ext \ { (cu , as) ->
+      (cu ,_) $= (mapidArr (ALL _) =$ ps cu =$= reff as) }
+    ; map-arr- = \ f g -> ext \ o -> ext \ { (cu , as) ->
+      (cu ,_) $= (map-arr- (ALL _) f g =$ ps cu =$= reff as) }
+    }
+
 
 
   -- Meanwhile, there is a concrete way to represent natural transformations
@@ -277,27 +328,38 @@ module _ {O I : Set} where
     -- Proving it is natural is an opportunity to deploy eqAll.
 
     CutmorphNT : Cutmorph F G ->  NaturalTransformation  [[ F ]]CrF  [[ G ]]CrF
-    CutmorphNT m = {!!}
+    transform (CutmorphNT m) P o (cu , ps) =
+      GF.map (\ i x -> transform (projectNT I x) P ps) o (m o cu)
+    natural (CutmorphNT m) f =
+      ext \ o -> ext \ {(cu , ps) -> {!natCutHelper!} } 
+        
 
     -- Extract a Cutmorph from an arbitrary natural transformation by choosing
     -- a suitable element type.
 
     ntCutmorph : NaturalTransformation  [[ F ]]CrF  [[ G ]]CrF  -> Cutmorph F G
-    ntCutmorph k = {!!}
+    ntCutmorph k = \ o cu -> transform k _ o (cu , positions _ _)
+
 
   -- Construct identity and composition for Cutmorphs. Hint: you've done the
   -- hard work already.
 
   idCutmorph : {F : O <| I} -> Cutmorph F F
-  idCutmorph = {!!}
+  idCutmorph = \ o cu -> cu , positions _ _
 
   _-Cutmorph-_ : {F G H : O <| I} -> Cutmorph F G -> Cutmorph G H -> Cutmorph F H
-  fg -Cutmorph- gh = {!!}
+  (fg -Cutmorph- gh) o cu with fg o cu
+  (fg -Cutmorph- gh) o cu | cu' , snd with gh o cu'
+  (fg -Cutmorph- gh) o cu | cu' , snd | cu'' , snd1 =
+   cu'' , all (\ i x -> getOnlyOne I (select x snd)) _ snd1
+
 
   -- We have left the following goal commented out, because it involves more heat
   -- than light.
   -- CUTMORPH : Category Cutmorph
   -- CUTMORPH = ?
+
+  --TODO use tool for categories here?
 
 
 ------------------------------------------------------------------------------
@@ -331,8 +393,10 @@ module _ {I : Set}(F : I <| I) where
 
     treeIter : [ Tree X -:> Y ]
     allTreeIter : [ All (Tree X) -:> All Y ]
-    treeIter i xt = {!!}
-    allTreeIter is xts = {!!}
+    treeIter i (leaf x) = l i x
+    treeIter i < cu , ts > = n i (cu , allTreeIter _ ts)
+    allTreeIter [] [] = []
+    allTreeIter (i ,- is) (t ,- ts) = treeIter i t ,- allTreeIter is ts
 
 
   module _ where
@@ -342,23 +406,38 @@ module _ {I : Set}(F : I <| I) where
     -- operation which should preserve nodes and graft on more tree at the leaves.
 
     treeBind : {X Y : I -> Set} -> [ X -:> Tree Y ] -> [ Tree X -:> Tree Y ]
-    treeBind k = {!!}
+    treeBind k = treeIter k iNode
 
     -- Use treeBind to implement "map" and "join" for trees.
     -- They're one-liners.
 
     tree : {X Y : I -> Set} -> [ X -:> Y ] -> [ Tree X -:> Tree Y ]
-    tree f = {!!}
+    tree f = treeBind (f -arr- iLeaf)
 
     treeJoin : {X : I -> Set} -> [ Tree (Tree X) -:> Tree X ]
-    treeJoin = {!!}
+    treeJoin = treeBind idArr
 
 
     -- Show that replacing leaves by leaves and nodes by nodes achieves little.
     -- This will need a proof by induction.
 
+    idHelper :  {X : I -> Set} (x : I)
+                    (t : Tree X x) ->
+             treeIter (\ i -> leaf) (\ i -> <_>) x t == t
+
+    allIdHelper :  {X : I -> Set} (xs : List I)
+                    (ts : All (Tree X ) xs) ->
+             allTreeIter (\ i -> leaf) (\ i -> <_>) xs ts == ts
+
+    idHelper i (leaf x) = refl
+    idHelper i < cu , ts > = <_> $= ((cu ,_ $= allIdHelper _ ts))
+
+    allIdHelper [] [] = refl
+    allIdHelper (x ,- xs) (t ,- ts) =
+      reff (\ y ys -> y ,- ys) =$= idHelper x t =$= allIdHelper xs ts 
+
     treeIterId : {X : I -> Set} -> treeIter (iLeaf {X = X}) iNode == idArr
-    treeIterId = {!!}
+    treeIterId = ext \ i -> ext \ t -> idHelper i t
 
 
   -- The following result will be of considerable assistance.
@@ -373,10 +452,24 @@ module _ {I : Set}(F : I <| I) where
     -- Show that growing a tree with treeBind then eating the result
     -- gives the same as eating the original with more eating at the leaves.
 
+    bindHelper : (i : I) (t : Tree W i) ->
+             treeIter l n i (treeIter k (\ i1 -> <_>) i t) ==
+             treeIter (\ i1 a -> treeIter l n i1 (k i1 a)) n i t
+    allBindHelper : (is : List I) (ts : All (Tree W) is) ->
+             allTreeIter l n is (allTreeIter k (\ i1 -> <_>) is ts) ==
+             allTreeIter (\ i1 a -> treeIter l n i1 (k i1 a)) n is ts
+
+    bindHelper i (leaf x) = refl
+    bindHelper i < cu , ts > = n i $= ((\ x -> cu , x) $= allBindHelper _ ts)
+    allBindHelper [] [] = refl
+    allBindHelper (i ,- is) (t ,- ts) =
+      reff (\ x xs -> x ,- xs) =$= bindHelper i t =$= allBindHelper is ts
+
     treeBindIter : (treeBind k -arr- treeIter l n)
                      ==
                    treeIter (k -arr- treeIter l n) n
-    treeBindIter = {!!}
+    treeBindIter = ext \ i -> ext \ t -> bindHelper i t where 
+
 
   -- Suitably tooled up, go for the win.
 
@@ -391,18 +484,45 @@ module _ {I : Set}(F : I <| I) where
 
     TREE : Functor (I -C> SET) (I -C> SET) Tree
     map TREE = tree
-    mapidArr TREE = {!!}
-    map-arr- TREE = {!!}
+    mapidArr TREE = treeIterId
+    map-arr- TREE = \ f g ->
+       tree (f -arr- g)
+       =< treeBindIter
+       (f -arr- iLeaf) (g -arr- iLeaf) iNode ]=
+       tree f -arr- tree g
+       [QED]
+
 
     treeMonad : Monad TREE
     transform (returnNT treeMonad) X = iLeaf
-    natural (returnNT treeMonad) = {!!}
+    natural (returnNT treeMonad) = \ f -> refl
     transform (joinNT treeMonad) X = treeJoin
-    natural (joinNT treeMonad) = {!!}
-    returnJoin treeMonad = {!!}
-    mapReturnJoin treeMonad = {!!}
-    joinJoin treeMonad = {!!}
-    
+
+    natural (joinNT treeMonad) = \ f -> 
+     treeJoin -arr- tree f
+     =[ treeBindIter idArr (f -arr- iLeaf) iNode >=
+     treeBind (tree f)
+     =< treeBindIter (tree f -arr- iLeaf) idArr iNode ]=
+     tree (tree f) -arr- treeJoin
+     [QED]
+    returnJoin treeMonad = refl
+
+    mapReturnJoin treeMonad =
+     tree iLeaf -arr- treeJoin
+     =[ treeBindIter (iLeaf -arr- iLeaf) idArr iNode >=
+     tree idArr
+     =[ mapidArr TREE >=
+     idArr
+     [QED]
+
+    joinJoin treeMonad =
+     treeJoin -arr- treeJoin
+     =[ treeBindIter idArr idArr iNode >=
+     treeBind treeJoin
+     =< treeBindIter (treeJoin -arr- iLeaf) idArr iNode ]=
+     tree treeJoin -arr- treeJoin
+     [QED]
+
 
 ------------------------------------------------------------------------------
 -- AND RELAX
@@ -423,7 +543,12 @@ twoToThe (suc n)  = twoToThe n +N twoToThe n
 -- There is more than one right answer.
 
 bigTree : (X : Nat -> Set) -> X 1 -> (n : Nat) -> Tree NatCut X (twoToThe n)
-bigTree X x n = {!!}
+bigTree X x zero = leaf x
+bigTree X x (suc n) =
+  < (twoToThe n , twoToThe n , refl) ,
+     bigTree X x n ,-
+     bigTree X x n ,-
+     [] >
 
 -- We'll see more of Tree and NatCut next time...
 

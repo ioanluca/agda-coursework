@@ -74,7 +74,7 @@ record Applicative (F : Set -> Set) : Set where
     -- You have enough to do, already.
 
 
-{-mango UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-mango UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 --  Vector Machinery
@@ -90,22 +90,32 @@ record Applicative (F : Set -> Set) : Set where
 -- Show that vectors of any given length are a functor on SET.
 
 VEC : (n : Nat) -> Functor SET SET (\ X -> Vec X n)
-VEC n = {!!}
+Functor.map (VEC n) = vec
+Functor.mapidArr (VEC n) = ext \ v -> prf v where
+  prf : forall {n A} (v : Vec A n) -> vPure (\ x -> x) <*V> v == v
+  prf [] = refl
+  prf (x ,- v) = x ,-_ $= prf v
+Functor.map-arr- (VEC n) f g = ext \ v -> prf f g v where
+  prf : forall {n A B C} (f : A -> B) (g : B -> C) (v : Vec A n) ->
+      vPure (\ a -> g (f a)) <*V> v == vPure g <*V> (vPure f <*V> v)
+  prf f g [] = refl
+  prf f g (x ,- v) = g (f x) ,-_ $= prf f g v
 
 -- ??? 3.2
 -- Find the components to make vectors applicative, by pointwise application.
 
 VApp : forall n -> Applicative \ X -> Vec X n
-VApp n = {!!}
+Applicative.pure (VApp n) = vPure
+Applicative._<*>_ (VApp n) = _<*V>_
 
 -- ??? 3.3
 -- Show that vectors respect One and * on types.
 
 void : forall {n : Nat} -> One -> Vec One n
-void <> = {!!}
+void <> = vPure <>
 
 zip : forall {n S T} -> Vec S n * Vec T n -> Vec (S * T) n
-zip (ss , ts) = {!!}
+zip (ss , ts) = vPure _,_ <*V> ss <*V> ts
 
 
 ------------------------------------------------------------------------------
@@ -125,12 +135,12 @@ Pasting C X = [ [[ C ]]Cr X -:> X ]
 -- from Exercise.Two.
 
 vecPaste : forall {X} -> Pasting NatCut (Vec X)
-vecPaste = {!!}
+vecPaste .(n +N m) ((n , m , refl) , v1 ,- v2 ,- []) = v1 +V v2
 
-END OF COMMENT mango-}
+{-END OF COMMENT mango-}
 
 
-{-starfruit UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-starfruit UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 --  Cutting in Multiple Dimensions
@@ -154,7 +164,10 @@ _>+<_ : forall {O I} -> O <| I -> O <| I -> O <| I
 -- (iii) The pieces should then be those given for the chosen cut in the
 --       chosen scheme.
 
-C >+< D = {!!}
+Cuts ((C <! cs) >+< (D <! ds)) o = C o + D o
+pieces ((C <! cs) >+< (D <! ds)) (inl c) = cs c
+pieces ((C <! cs) >+< (D <! ds)) (inr d) = ds d
+
 
 -- ??? 3.6
 -- Right and Left Framing
@@ -170,8 +183,13 @@ _|<_ : forall {O I}    J (C : O <| I)     ->  (J * O)     <| (J * I)
 -- That is, the given value in O should determine the choice of cuts
 -- according to C. All pieces should inherit the given value in J.
 
-C >| J = {!!}
-J |< C = {!!}
+Cuts ((C <! cs) >| J) (o , j) = C o
+pieces ((C <! cs) >| J) {o , j} c =
+  list (\ x -> x , j) (cs c) 
+
+Cuts (J |< (C <! cs)) (j , o) = C o
+pieces (J |< (C <! cs)) {j , o} c =
+  list (\ x -> j , x) (cs c)
 
 -- Intuition:
 -- If you know how to cut up a number into parts, then you know how to
@@ -191,7 +209,8 @@ _|+|_ : forall {I J} -> I <| I -> J <| J -> (I * J) <| (I * J)
 --         either to cut the I dimension, preserving the J index,
 --         or     to cut the J dimension, preserving the I index.
 
-C |+| D = {!!}
+C |+| D = (C >| _) >+< (_ |< D)
+
 
 -- Hint: use framing and angelic choice, of course!
 
@@ -226,7 +245,13 @@ example : Tree RectCut Square (13 , 8)
 -- (ii)  Otherwise, cut your rectangle into two pieces, the first of which
 --       is square.
 
-example = {!!}
+example = < inl (8 , 5 , refl) ,
+  leaf (square 8) ,- < inr (5 , 3 , refl) ,
+  leaf (square 5) ,- < inl (3 , 2 , refl) ,
+  leaf (square 3) ,- < inr (2 , 1 , refl) ,
+  leaf (square 2) ,- < inl (1 , 1 , refl) ,
+  leaf (square 1) ,- (leaf (square 1))
+  ,- [] > ,- [] > ,- [] > ,- [] > ,- [] >
 
 -- Historical note:
 -- This is exactly Euclid's algorithm for computing the greatest common
@@ -235,10 +260,10 @@ example = {!!}
 -- Fibonacci numbers (e.g., 13 and 8), you will find that you cut in
 -- alternating dimensions until you get down to a square of side 1.
 
-END OF COMMENT starfruit-}
+{-END OF COMMENT starfruit-}
 
 
-{-lemon UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-lemon UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 --  Useful Structure for All
@@ -428,7 +453,7 @@ expectedOutput =
 checkOutput : showMatrix exampleMatrix == expectedOutput
 checkOutput = {!!}
 
-END OF COMMENT lemon-}
+{-END OF COMMENT lemon-}
 
 
 {-olive UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
