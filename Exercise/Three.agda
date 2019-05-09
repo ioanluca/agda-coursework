@@ -482,7 +482,7 @@ checkOutput = refl
 {-END OF COMMENT lemon-}
 
 
-{-olive UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-olive UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 -- The List Relator
@@ -507,7 +507,8 @@ data ListR {X Y : Set}(R : X -> Y -> Set) : List X -> List Y -> Set where
 -- Show that every list is pairwise equal to itself.
 
 listRrefl : forall {X}(xs : List X) -> ListR _==_ xs xs
-listRrefl xs = {!!}
+listRrefl [] = []
+listRrefl (x ,- xs) = refl ,- listRrefl xs
 
 
 -- ??? 3.17
@@ -521,12 +522,13 @@ listR : forall {A B}               -- source element types
      -> (forall {a b} -> R a b -> S (f a) (g b))  -- source implies target
      -- Now, show why the target lists are related if the source lists are.
      -> forall {as bs} -> ListR R as bs -> ListR S (list f as) (list g bs)
-listR f g h rs = {!!}
+listR f g h [] = []
+listR f g h (r ,- rs) = h r ,- listR f g h rs
 
-END OF COMMENT olive-}
+{-END OF COMMENT olive-}
 
 
-{-tamarind UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-tamarind UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 -- Cutting Things Up And Sticking Them Back Together
@@ -624,7 +626,9 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
     -> (ds : ListR SubCut iss is)  -- how sub-pieces relate to pieces
     -> All (All (Tree C P)) iss    -- now, given trees as sub-pieces,
     -> All (Tree C P) is           -- make the pieces!
-  glueSubCut ds tss = {!!}
+  glueSubCut [] [] = []
+  glueSubCut (inl refl ,- ds) ((t ,- []) ,- tss) = t ,- glueSubCut ds tss
+  glueSubCut (inr (d , refl) ,- ds) (ts ,- tss) = < d , ts > ,- glueSubCut ds tss
 
 
 -- So, what's the general recipe. Here goes.
@@ -662,9 +666,17 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
       -> All (Tree C Q) is'              -- now, given the pieces
       -> All (All (Tree C Q)) iss'       -- produce the sub-pieces
 
-    treeCutter c t = {!!}
+    treeCutter c (leaf x) = all (\ i xx -> leaf xx) _ (cutQ c x)
+    treeCutter c < fst , snd > with recut c fst
+    treeCutter c < fst , snd > | _ , _ , ds , es , rel =
+      glueSubCut ds (rel (chopSubCut es snd))
 
-    chopSubCut ds' tss = {!!}
+    chopSubCut [] [] = []
+    chopSubCut (inl refl ,- es) (t ,- ts) =
+      (t ,- []) ,- chopSubCut es ts
+    chopSubCut (inr (e , refl) ,- es) (t ,- ts) =
+      treeCutter e t ,- chopSubCut es ts
+
 
 -- Hints:
 -- (i)   Mutual recursion will probably be necessary.
@@ -686,7 +698,10 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
          {R}  -- the type of pieces in the combined output
       -> [        P -:> Tree C Q -:> Tree C R ]  -- front piece on back tree
       -> [ Tree C P -:> Tree C Q -:> Tree C R ]  -- front tree on back tree
-    overlay f = {!!}
+
+    overlay f = treeIter _  f \
+      { i (fst , snd) t -> < fst , appAll  _ snd (treeCutter fst t) > }
+
 
 -- Hints:
 -- (i)   Write a recursive program if you like, but do consider whether
@@ -704,7 +719,8 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
 -- Construct a NatCut cutter for vectors.
 
 vecCutter : forall {X} -> Cutter NatCut (Vec X)
-vecCutter c xs = {!!}
+vecCutter (l , r , refl) xs with chop l r xs
+vecCutter (l , r , refl) .(xs +V ys) | choppable xs ys = xs ,- ys ,- []
 
 -- Hint: see library.
 
@@ -740,7 +756,10 @@ compCut :
   -> forall {X} -- polymorphic
        -> Cutter (C |+| D) -- two-dimensional cutter
            \ { (i , j) -> G (F X i) j}  -- for Gs full of Fs.
-compCut C F D G mapG yankG cf dg cut gfx = {!!}
+compCut C F D G mapG yankG cf dg {i = ii , jj} (inl x) gfx =
+  allList (\ x -> x , jj) _ (yankG (mapG (cf x) gfx))
+compCut C F D G mapG yankG cf dg {i = ii , jj} (inr x) gfx =
+ allList (\ x -> ii , x) _ (dg x gfx)
 
 
 -- ??? 3.23
@@ -749,7 +768,9 @@ compCut C F D G mapG yankG cf dg cut gfx = {!!}
 
 vecYank : {P : Nat -> Set} {is : List Nat} {j : Nat} ->
           Vec (All P is) j -> All (\ i -> Vec (P i) j) is
-vecYank pss = {!!}
+vecYank [] = pureAll (\ i -> []) _
+vecYank (ps ,- pss) =
+  appAll _ (appAll _ (pureAll (\ i x xs -> x ,- xs) _) ps) (vecYank pss)
 
 matrixCutter : forall {X} -> Cutter RectCut (Matrix X)
 matrixCutter = compCut NatCut Vec NatCut Vec vec vecYank vecCutter vecCutter
@@ -812,22 +833,54 @@ cutCompare : forall x x' y y' {n}
 
 data CutCompare x x' y y' n where
   cutLt : {- what evidence goes here, when x < y ?-}
+    (m : Nat) -> (x +N suc m) == y -> (suc m +N y') == x' ->
     CutCompare x x' y y' n
   cutEq : {- what evidence goes here, when x = y ? -}
+    x == y -> x' == y' ->
     CutCompare x x' y y' n
   cutGt : {- what evidence goes here, when x > y ? -}
+    (m : Nat) -> (y +N suc m) == x -> (suc m +N x') == y' ->
     CutCompare x x' y y' n
 
 -- ??? 3.26
 -- Show that you can get your hands on the evidence.
 
-cutCompare x x' y y' qxx' qyy' = {!!}
+sucInProof : {x y : Nat} -> suc x == suc y -> x == y
+sucInProof refl = refl
+
+cutCompare zero x' zero .x' refl refl = cutEq refl refl
+cutCompare zero .(suc (y +N y')) (suc y) y' refl refl = cutLt y refl refl
+cutCompare (suc x) x' zero .(suc (x +N x')) refl refl = cutGt x refl refl
+cutCompare (suc x) x' (suc y) y' {zero} () ()
+cutCompare (suc x) x' (suc y) y' {suc n} xq yq with
+  cutCompare x x' y y' (sucInProof xq) (sucInProof yq) 
+cutCompare (suc x) x' (suc .(x +N suc d)) y' xq yq
+  | cutLt d refl bq = cutLt d refl bq
+cutCompare (suc x) x' (suc .x) y' xq yq
+  | cutEq refl bq = cutEq refl bq
+cutCompare (suc .(y +N suc d)) x' (suc y) y' xq yq
+  | cutGt d refl bq = cutGt d refl bq
+
 
 -- ??? 3.24
 -- Use cutCompare to power natRecutter.
 
 natRecutter (l , r , q) (l' , r' , q') with cutCompare l r l' r' q q'
-natRecutter (l , r , q) (l' , r' , q') | cc = {!!}
+natRecutter (l , r , q) (l' , r' , q') | cutLt d x y
+  = _ , _ , inl refl ,- inr ((suc d , r' , y) , refl) ,- []
+  , inr ((l , suc d , x) , refl) ,- inl refl ,- []
+  , \ { ((m ,- n ,- []) ,- (p ,- []) ,- [])
+     -> (m ,- []) ,- (n ,- p ,- []) ,- [] }
+natRecutter (l , r , q) (.l , .r , q') | cutEq refl refl
+  = _ , _ , inl refl ,- inl refl ,- []
+  , inl refl ,- inl refl ,- []
+  , \ e -> e
+natRecutter (l , r , q) (l' , r' , q') | cutGt d x y
+  = _ , _ , inr ((l' , suc d , x) , refl) ,- inl refl ,- []
+  , inl refl ,- inr ((suc d , r , y) , refl) ,- []
+  , \ { ((m ,- []) ,- (n ,- p ,- []) ,- [])
+     -> (m ,- n ,- []) ,- (p ,- []) ,- [] }
+
 
 -- Hint: work backwards, starting with the given, uninformative definition
 -- of CutCompare. Try to write natRecutter, and see what evidence is
@@ -885,10 +938,10 @@ bmulp : forall {I J K}{P : K -> Set}{f : I -> J -> K}{js : I -> List J} ->
 rectRecutter : Recutter RectCut
 rectRecutter = recutPair NatCut NatCut natRecutter natRecutter
 
-END OF COMMENT tamarind-}
+{-END OF COMMENT tamarind-}
 
 
-{-aubergine UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-aubergine UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 -- Holes and Overlays
@@ -908,7 +961,8 @@ data Holey {I : Set}(S : I -> Set)(i : I) : Set where
 
 cutHoley : forall {I}(C : I <| I)(S : I -> Set) ->
   Cutter C S -> Cutter C (Holey S)
-cutHoley C S cS c hs = {!!}
+cutHoley C S cS c hole = pureAll (\ i -> hole) _
+cutHoley C S cS c (stuff x) = all (\ i x1 -> stuff x1) _ (cS c x)
 
 
 -- Now, we fix that we are working with rectangular stuff.
@@ -923,7 +977,8 @@ module OVERLAYING (S : Nat * Nat -> Set)(cS : Cutter RectCut S) where
 -- Show that you can cut overlays.
 
   overlayCutter : Cutter RectCut Overlay
-  overlayCutter = {!!}
+  overlayCutter = treeCutter RectCut (cutHoley RectCut _ cS) rectRecutter
+
 
 -- Hint: Specialise an operation you have already developed.
 
@@ -934,10 +989,14 @@ module OVERLAYING (S : Nat * Nat -> Set)(cS : Cutter RectCut S) where
 -- and the output is the combined thing.
 
   superimpose : [ Overlay -:> Overlay -:> Overlay ]
-  superimpose = {!!}
+  superimpose = overlay RectCut (cutHoley RectCut _ cS) rectRecutter
+    \ { (fst1 , snd1) hole b -> b
+      ; (fst1 , snd1) (stuff f) b -> leaf (stuff f)}
 
   backstop : [ Overlay -:> Background -:> Background ]
-  backstop = {!!}
+  backstop = overlay RectCut cS rectRecutter
+    \ { (fst1 , snd1) hole b → b
+      ; (fst1 , snd1) (stuff f) b -> leaf f}
 
 -- Hint: This problem was the entire reason for writing "overlay".
 
@@ -1044,9 +1103,9 @@ module _ where
     ".............................." ,- []
 
   checkSeeOverlay : seeOverlay == expectedSeeOverlay
-  checkSeeOverlay = {!!}  -- this should be provable with refl
+  checkSeeOverlay = refl  -- this should be provable with refl
 
-END OF COMMENT aubergine-}
+{-END OF COMMENT aubergine-}
 
 
 {-banana UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
