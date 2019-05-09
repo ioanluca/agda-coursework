@@ -327,7 +327,8 @@ allExt : forall {X I J}                 -- some index types
 
 -- We suggest the first move, but leave the rest to you.
 allExt f {lf} lfEq g {lg} lgEq pq xs ps with lf xs | lfEq xs | lg xs | lgEq xs
-allExt f {lf} lfEq g {lg} lgEq pq xs ps | ._ | refl | ._ | refl = {!!}
+allExt f {lf} lfEq g {lg} lgEq pq [] [] | .[] | refl | .[] | refl = []
+allExt f {lf} lfEq g {lg} lgEq pq (x ,- xs) (p ,- ps) | .(f x ,- list f xs) | refl | .(g x ,- list g xs) | refl = pq x p ,- allExt f lfEq g {!lgEq!} pq xs {!!} 
 
 -- ??? 3.9 Reindexing
 module _ {X Y}(f : X -> Y){P : Y -> Set} where
@@ -338,8 +339,8 @@ module _ {X Y}(f : X -> Y){P : Y -> Set} where
   allList : [ All (f - P) -:> (list f - All P) ]
   allTsil : [ (list f - All P) -:> All (f - P) ]
 
-  allList = allExt {!!} {!!} {!!} {!!} {!!}
-  allTsil = allExt {!!} {!!} {!!} {!!} {!!}
+  allList = allExt id listId f (\ xs -> refl) \ _ -> id
+  allTsil = allExt f (\ xs -> refl) id listId \ _ -> id
 
 
 -- ??? 3.10
@@ -350,7 +351,8 @@ module _ {F : Set -> Set}(ApF : Applicative F) where
 
   allYank : forall {X}{P : X -> Set} ->
             [ All (P - F) -:> (All P - F) ]
-  allYank fps = {!!}
+  allYank [] [] = pure []
+  allYank (x ,- xs) (fp ,- fps) = pure _,-_ <*> fp <*> allYank xs fps
 
 -- Hint: this is a lot like "traverse" for All
 
@@ -366,9 +368,11 @@ pureAll : forall {I}{P : I -> Set}
 appAll  : forall {I}{P Q : I -> Set}
        -> [ All (P -:> Q) -:> All P -:> All Q ]
 
-pureAll p is = {!!}
+pureAll p [] = []
+pureAll p (i ,- is) = p i ,- pureAll p is
 
-appAll is pqs ps = {!!}
+appAll [] [] [] = []
+appAll (i ,- is) (pq ,- pqs) (p ,- ps) = pq p ,- appAll is pqs ps
 
 -- Hint: follow the recipe from Lib.Vec.
 
@@ -382,7 +386,9 @@ transpose : forall {I J}        -- You have two index types...
   -> All (\ i -> All (i ~_) js) is  -- Every i is related to every j.
   -> All (\ j -> All (_~ j) is) js  -- Show every j is related to every i.
 
-transpose xss = {!!}
+transpose [] = pureAll (\ i -> []) _
+transpose (xs ,- xss) =
+  appAll _ (appAll _ (pureAll (\ i -> _,-_) _) xs) (transpose xss)
 
 -- Hints:
 -- (i)  This is a classic exercise in deploying applicative structure.
@@ -405,7 +411,12 @@ compPaste : forall {I J}                -- What you get:
   -> (forall {X} -> Pasting (C |+| D) \ { (i , j) -> G (F X i) j})
      -- a polymorphic two-dimensional paster for Gs of Fs
 
-compPaste C F D G ApG cf dg (i , j) (cut , ps) = {!!}
+compPaste C F D G ApG cf dg (i , j) (inl x , ps) =
+  pure (cf i) <*>
+  (pure (x ,_) <*> allYank (ApG j) _ (allTsil _ _ ps))
+  where open Applicative (ApG j)
+compPaste C F D G ApG cf dg (i , j) (inr x , ps) =
+  dg j (x , allTsil _ _ ps)
 
 
 -- Now that you've done some hard training, you can do some actual karate!
@@ -414,7 +425,7 @@ compPaste C F D G ApG cf dg (i , j) (cut , ps) = {!!}
 -- In one line, give a RectCut-paster for Matrix (from Lib.Vec)
 
 matPaste : forall {X} -> Pasting RectCut (Matrix X)
-matPaste = {!!}
+matPaste = compPaste NatCut Vec NatCut Vec VApp vecPaste vecPaste
 
 
 -- ??? 3.15
@@ -423,7 +434,8 @@ matPaste = {!!}
 
 treeMatrix : forall {X P} ->
   [ P -:> Matrix X ] -> [ Tree RectCut P -:> Matrix X ]
-treeMatrix l = {!!}
+treeMatrix l = treeIter _ l matPaste
+
 
 
 ------------------------------------------------------------------------------
@@ -465,7 +477,7 @@ expectedOutput =
 
 -- Does it?
 checkOutput : showMatrix exampleMatrix == expectedOutput
-checkOutput = {!!}
+checkOutput = refl
 
 {-END OF COMMENT lemon-}
 
