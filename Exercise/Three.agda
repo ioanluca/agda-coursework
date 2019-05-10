@@ -1,4 +1,4 @@
--- TOTAL MARK: 43/60
+-- TOTAL MARK: 48/60
 {-# OPTIONS --type-in-type #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
@@ -1176,6 +1176,9 @@ react (rectAppLayer x c wh) (key (char cc)) = wh , refl , rectAppLayer x cc _
 react (rectAppLayer x c wh) (key cc) = wh , refl , rectAppLayer x c _
 react (rectAppLayer x c wh) (resize w h) = _ , refl , rectAppLayer x c _
 
+-- F: That's not a black background like before!
+
+-- MARK: 2/2
 
 -- ??? 3.32
 -- Show how to turn an AppLayer into an Application.
@@ -1202,6 +1205,7 @@ react (runAppLayer wh layer) command | whnew , snd , trd
 -- (v)   You have already done the hard work by writing "treeMatrix" and
 --       "backstop".
 
+-- MARK: 2/2
 
 ------------------------------------------------------------------------------
 -- Applications in a Window
@@ -1267,6 +1271,12 @@ react (twoLayers wh front back) (resize w h)
 react (twoLayers wh front back) (resize w h)
   | .(w , h) , refl , f | .(w , h) , refl , b =
     _ , refl , twoLayers _ f b
+
+-- F: Almost all good, but you have forgotten to trap the tab key, so
+     there is no way in your implementation to actually swap back and
+     front.
+
+-- MARK: 1/2
 
 -- Hints:
 -- (iv)  superimpose
