@@ -328,7 +328,7 @@ allExt : forall {X I J}                 -- some index types
 -- We suggest the first move, but leave the rest to you.
 allExt f {lf} lfEq g {lg} lgEq pq xs ps with lf xs | lfEq xs | lg xs | lgEq xs
 allExt f {lf} lfEq g {lg} lgEq pq [] [] | .[] | refl | .[] | refl = []
-allExt f {lf} lfEq g {lg} lgEq pq (x ,- xs) (p ,- ps) | .(f x ,- list f xs) | refl | .(g x ,- list g xs) | refl = pq x p ,- allExt f lfEq g {!lgEq!} pq xs {!!} 
+allExt f {lf} lfEq g {lg} lgEq pq (x ,- xs) (p ,- ps) | .(f x ,- list f xs) | refl | .(g x ,- list g xs) | refl = pq x p ,- allExt f lfEq g {!refl!} pq xs {!!} 
 
 -- ??? 3.9 Reindexing
 module _ {X Y}(f : X -> Y){P : Y -> Set} where
@@ -477,7 +477,7 @@ expectedOutput =
 
 -- Does it?
 checkOutput : showMatrix exampleMatrix == expectedOutput
-checkOutput = refl
+checkOutput = {!!}
 
 {-END OF COMMENT lemon-}
 
@@ -1103,12 +1103,12 @@ module _ where
     ".............................." ,- []
 
   checkSeeOverlay : seeOverlay == expectedSeeOverlay
-  checkSeeOverlay = refl  -- this should be provable with refl
+  checkSeeOverlay = {!!}  -- this should be provable with refl
 
 {-END OF COMMENT aubergine-}
 
 
-{-banana UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE
+{-banana UNCOMMENT WHEN YOU REACH THIS PART OF THE EXERCISE-}
 
 ------------------------------------------------------------------------------
 -- Overlays for Applications
@@ -1138,7 +1138,13 @@ AppLayer = Server AppInterface (Overlay :*: CursorPosition)
 -- it to allow the colour to be chosen.
 
 rectAppLayer : Colour -> Char -> [ AppLayer ]
-rectAppLayer x c wh = {!!}
+fst (display (rectAppLayer x c wh)) =
+  leaf (stuff (vPure (vPure (x - c # blue))))
+snd (display (rectAppLayer x c wh)) = wh
+react (rectAppLayer x c wh) (key (char cc)) = wh , refl , rectAppLayer x cc _
+react (rectAppLayer x c wh) (key cc) = wh , refl , rectAppLayer x c _
+react (rectAppLayer x c wh) (resize w h) = _ , refl , rectAppLayer x c _
+
 
 -- ??? 3.32
 -- Show how to turn an AppLayer into an Application.
@@ -1150,7 +1156,14 @@ runAppLayer : [ AppLayer -:> Application ]
 -- (ii)  The "stuff" in the AppLayer should display as it is given.
 -- (iii) The Application should react as given by the AppLayer.
 
-runAppLayer wh layer = {!!}
+display (runAppLayer wh layer) with display layer
+display (runAppLayer wh layer) | fst1 , snd1
+  = treeMatrix (\ _ -> id) _
+     (backstop _ fst1 (leaf
+     (vPure (vPure (yellow - ' ' # red))))) , snd1
+react (runAppLayer wh layer) command with react layer command
+react (runAppLayer wh layer) command | whnew , snd , trd
+  = whnew , snd , runAppLayer whnew trd
 
 -- Hints:
 -- (iv)  Note that the type ensures that the Overlay is the size of the
@@ -1212,13 +1225,23 @@ twoLayers : [ AppLayer -:> AppLayer -:> AppLayer ]
 -- (ii)  Trap the tab key, making it swap the front and back layers.
 -- (iii) All other keystrokes should be handled by the front layer.
 
-twoLayers wh front back = {!!}
+display (twoLayers wh front back) with display front | display back
+display (twoLayers wh front back) | fst1 , snd1 | fst2 , snd2 =
+  superimpose _ fst1 fst2 , snd1
+react (twoLayers wh front back) (key k) with react front (key k)
+react (twoLayers wh front back) (key k) | .wh , refl , f =
+  _ , refl , twoLayers _ f back
+react (twoLayers wh front back) (resize w h)
+  with react front (resize w h) | react back (resize w h)
+react (twoLayers wh front back) (resize w h)
+  | .(w , h) , refl , f | .(w , h) , refl , b =
+    _ , refl , twoLayers _ f b
 
 -- Hints:
 -- (iv)  superimpose
 -- (v)   How should "resize" events be handled? What do the types make you do?
 
-END OF COMMENT banana-}
+{-END OF COMMENT banana-}
 
 
 ------------------------------------------------------------------------------
