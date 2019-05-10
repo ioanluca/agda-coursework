@@ -1,4 +1,4 @@
--- TOTAL MARK: 12/60
+-- TOTAL MARK: 43/60
 {-# OPTIONS --type-in-type #-}
 {-# OPTIONS --allow-unsolved-metas #-}
 
@@ -330,6 +330,8 @@ allExt f {lf} lfEq g {lg} lgEq pq xs ps with lf xs | lfEq xs | lg xs | lgEq xs
 allExt f {lf} lfEq g {lg} lgEq pq [] [] | .[] | refl | .[] | refl = []
 allExt f {lf} lfEq g {lg} lgEq pq (x ,- xs) (p ,- ps) | .(f x ,- list f xs) | refl | .(g x ,- list g xs) | refl = pq x p ,- allExt f lfEq g {!refl!} pq xs {!!} 
 
+--MARK: 1/2
+
 -- ??? 3.9 Reindexing
 module _ {X Y}(f : X -> Y){P : Y -> Set} where
 
@@ -342,6 +344,7 @@ module _ {X Y}(f : X -> Y){P : Y -> Set} where
   allList = allExt id listId f (\ xs -> refl) \ _ -> id
   allTsil = allExt f (\ xs -> refl) id listId \ _ -> id
 
+--MARK: 1/1
 
 -- ??? 3.10
 -- Show that you can yank applicative structure out through All.
@@ -356,6 +359,7 @@ module _ {F : Set -> Set}(ApF : Applicative F) where
 
 -- Hint: this is a lot like "traverse" for All
 
+--MARK: 2/2
 
 -- ??? 3.11
 -- Find the *indexed* applicative structure for All.
@@ -376,6 +380,7 @@ appAll (i ,- is) (pq ,- pqs) (p ,- ps) = pq p ,- appAll is pqs ps
 
 -- Hint: follow the recipe from Lib.Vec.
 
+--MARK: 1/1
 
 -- ??? 3.12
 -- Implement transposition.
@@ -389,6 +394,8 @@ transpose : forall {I J}        -- You have two index types...
 transpose [] = pureAll (\ i -> []) _
 transpose (xs ,- xss) =
   appAll _ (appAll _ (pureAll (\ i -> _,-_) _) xs) (transpose xss)
+
+--MARK: 2/2
 
 -- Hints:
 -- (i)  This is a classic exercise in deploying applicative structure.
@@ -418,6 +425,7 @@ compPaste C F D G ApG cf dg (i , j) (inl x , ps) =
 compPaste C F D G ApG cf dg (i , j) (inr x , ps) =
   dg j (x , allTsil _ _ ps)
 
+--MARK: 2/2
 
 -- Now that you've done some hard training, you can do some actual karate!
 
@@ -427,6 +435,7 @@ compPaste C F D G ApG cf dg (i , j) (inr x , ps) =
 matPaste : forall {X} -> Pasting RectCut (Matrix X)
 matPaste = compPaste NatCut Vec NatCut Vec VApp vecPaste vecPaste
 
+--MARK: 1/1
 
 -- ??? 3.15
 -- In one line, show how to paste together a Matrix from a tree whose
@@ -436,7 +445,7 @@ treeMatrix : forall {X P} ->
   [ P -:> Matrix X ] -> [ Tree RectCut P -:> Matrix X ]
 treeMatrix l = treeIter _ l matPaste
 
-
+--MARK: 1/1
 
 ------------------------------------------------------------------------------
 --  Seeing the Matrix (have a break; check your work)
@@ -479,6 +488,8 @@ expectedOutput =
 checkOutput : showMatrix exampleMatrix == expectedOutput
 checkOutput = {!!}
 
+-- F: if you finish allExt, this works
+
 {-END OF COMMENT lemon-}
 
 
@@ -510,6 +521,7 @@ listRrefl : forall {X}(xs : List X) -> ListR _==_ xs xs
 listRrefl [] = []
 listRrefl (x ,- xs) = refl ,- listRrefl xs
 
+--MARK: 1/1
 
 -- ??? 3.17
 -- Build "map" for ListR.
@@ -524,6 +536,8 @@ listR : forall {A B}               -- source element types
      -> forall {as bs} -> ListR R as bs -> ListR S (list f as) (list g bs)
 listR f g h [] = []
 listR f g h (r ,- rs) = h r ,- listR f g h rs
+
+--MARK: 1/1
 
 {-END OF COMMENT olive-}
 
@@ -630,6 +644,7 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
   glueSubCut (inl refl ,- ds) ((t ,- []) ,- tss) = t ,- glueSubCut ds tss
   glueSubCut (inr (d , refl) ,- ds) (ts ,- tss) = < d , ts > ,- glueSubCut ds tss
 
+--MARK: 2/2
 
 -- So, what's the general recipe. Here goes.
 
@@ -677,6 +692,7 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
     chopSubCut (inr (e , refl) ,- es) (t ,- ts) =
       treeCutter e t ,- chopSubCut es ts
 
+--MARK: 2/2
 
 -- Hints:
 -- (i)   Mutual recursion will probably be necessary.
@@ -702,6 +718,7 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
     overlay f = treeIter _  f \
       { i (fst , snd) t -> < fst , appAll  _ snd (treeCutter fst t) > }
 
+--MARK: 2/2
 
 -- Hints:
 -- (i)   Write a recursive program if you like, but do consider whether
@@ -721,6 +738,8 @@ module _ {I}(C : I <| I) where  -- we fix some notion of cutting
 vecCutter : forall {X} -> Cutter NatCut (Vec X)
 vecCutter (l , r , refl) xs with chop l r xs
 vecCutter (l , r , refl) .(xs +V ys) | choppable xs ys = xs ,- ys ,- []
+
+--MARK: 1/1
 
 -- Hint: see library.
 
@@ -761,6 +780,7 @@ compCut C F D G mapG yankG cf dg {i = ii , jj} (inl x) gfx =
 compCut C F D G mapG yankG cf dg {i = ii , jj} (inr x) gfx =
  allList (\ x -> ii , x) _ (dg x gfx)
 
+--MARK: 2/2
 
 -- ??? 3.23
 -- Show that you can "yank" through vectors, and thus acquire your
@@ -771,6 +791,8 @@ vecYank : {P : Nat -> Set} {is : List Nat} {j : Nat} ->
 vecYank [] = pureAll (\ i -> []) _
 vecYank (ps ,- pss) =
   appAll _ (appAll _ (pureAll (\ i x xs -> x ,- xs) _) ps) (vecYank pss)
+
+--MARK: 1/1
 
 matrixCutter : forall {X} -> Cutter RectCut (Matrix X)
 matrixCutter = compCut NatCut Vec NatCut Vec vec vecYank vecCutter vecCutter
@@ -842,11 +864,15 @@ data CutCompare x x' y y' n where
     (m : Nat) -> (y +N suc m) == x -> (suc m +N x') == y' ->
     CutCompare x x' y y' n
 
+--MARK: 1/1
+
 -- ??? 3.26
 -- Show that you can get your hands on the evidence.
 
 sucInProof : {x y : Nat} -> suc x == suc y -> x == y
 sucInProof refl = refl
+
+-- F: also known as `(suc $=_)`
 
 cutCompare zero x' zero .x' refl refl = cutEq refl refl
 cutCompare zero .(suc (y +N y')) (suc y) y' refl refl = cutLt y refl refl
@@ -861,6 +887,7 @@ cutCompare (suc x) x' (suc .x) y' xq yq
 cutCompare (suc .(y +N suc d)) x' (suc y) y' xq yq
   | cutGt d refl bq = cutGt d refl bq
 
+--MARK: 2/2
 
 -- ??? 3.24
 -- Use cutCompare to power natRecutter.
@@ -881,6 +908,7 @@ natRecutter (l , r , q) (l' , r' , q') | cutGt d x y
   , \ { ((m ,- []) ,- (n ,- p ,- []) ,- [])
      -> (m ,- n ,- []) ,- (p ,- []) ,- [] }
 
+--MARK: 2/2
 
 -- Hint: work backwards, starting with the given, uninformative definition
 -- of CutCompare. Try to write natRecutter, and see what evidence is
@@ -964,6 +992,7 @@ cutHoley : forall {I}(C : I <| I)(S : I -> Set) ->
 cutHoley C S cS c hole = pureAll (\ i -> hole) _
 cutHoley C S cS c (stuff x) = all (\ i x1 -> stuff x1) _ (cS c x)
 
+--MARK: 1/1
 
 -- Now, we fix that we are working with rectangular stuff.
 
@@ -979,6 +1008,7 @@ module OVERLAYING (S : Nat * Nat -> Set)(cS : Cutter RectCut S) where
   overlayCutter : Cutter RectCut Overlay
   overlayCutter = treeCutter RectCut (cutHoley RectCut _ cS) rectRecutter
 
+--MARK: 1/1
 
 -- Hint: Specialise an operation you have already developed.
 
@@ -1000,6 +1030,7 @@ module OVERLAYING (S : Nat * Nat -> Set)(cS : Cutter RectCut S) where
 
 -- Hint: This problem was the entire reason for writing "overlay".
 
+--MARK: 1/1
 
 ------------------------------------------------------------------------------
 -- Test Rig for Overlaying
